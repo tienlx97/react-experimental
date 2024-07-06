@@ -1,6 +1,6 @@
 /**
  * @license React
- * react-jsx-runtime.profiling.js
+ * react-jsx-runtime.react-server.production.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -11,26 +11,15 @@
 "use strict";
 var React = require("react"),
   REACT_LEGACY_ELEMENT_TYPE = Symbol.for("react.element"),
-  REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
-function formatProdErrorMessage(code) {
-  var url = "https://react.dev/errors/" + code;
-  if (1 < arguments.length) {
-    url += "?args[]=" + encodeURIComponent(arguments[1]);
-    for (var i = 2; i < arguments.length; i++)
-      url += "&args[]=" + encodeURIComponent(arguments[i]);
-  }
-  return (
-    "Minified React error #" +
-    code +
-    "; visit " +
-    url +
-    " for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"),
+  ReactSharedInternalsServer =
+    React.__SERVER_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+if (!ReactSharedInternalsServer)
+  throw Error(
+    'The "react" package in this environment is not configured correctly. The "react-server" condition must be enabled in any environment that runs React Server Components.'
   );
-}
-var ReactSharedInternals =
-  React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
 function getOwner() {
-  var dispatcher = ReactSharedInternals.A;
+  var dispatcher = ReactSharedInternalsServer.A;
   return null === dispatcher ? null : dispatcher.getOwner();
 }
 function jsxProd(type$jscomp$0, config, maybeKey) {
@@ -78,13 +67,27 @@ function jsxProd(type$jscomp$0, config, maybeKey) {
   };
 }
 function stringRefAsCallbackRef(stringRef, type, owner, value) {
-  if (!owner) throw Error(formatProdErrorMessage(290, stringRef));
-  if (1 !== owner.tag) throw Error(formatProdErrorMessage(309));
+  if (!owner)
+    throw Error(
+      "Element ref was specified as a string (" +
+        stringRef +
+        ") but no owner was set. This could happen for one of the following reasons:\n1. You may be adding a ref to a function component\n2. You may be adding a ref to a component that was not created inside a component's render method\n3. You have multiple copies of React loaded\nSee https://react.dev/link/refs-must-have-owner for more information."
+    );
+  if (1 !== owner.tag)
+    throw Error(
+      "Function components cannot have string refs. We recommend using useRef() instead. Learn more about using refs safely here: https://react.dev/link/strict-mode-string-ref"
+    );
   type = owner.stateNode;
-  if (!type) throw Error(formatProdErrorMessage(147, stringRef));
+  if (!type)
+    throw Error(
+      "Missing owner for string ref " +
+        stringRef +
+        ". This error is likely caused by a bug in React. Please file an issue."
+    );
   type = type.refs;
   null === value ? delete type[stringRef] : (type[stringRef] = value);
 }
 exports.Fragment = REACT_FRAGMENT_TYPE;
 exports.jsx = jsxProd;
+exports.jsxDEV = void 0;
 exports.jsxs = jsxProd;

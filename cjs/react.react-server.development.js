@@ -1,6 +1,6 @@
 /**
  * @license React
- * react.development.js
+ * react.react-server.development.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -11,25 +11,6 @@
 "use strict";
 "production" !== process.env.NODE_ENV &&
   (function () {
-    function defineDeprecationWarning(methodName, info) {
-      Object.defineProperty(Component.prototype, methodName, {
-        get: function () {
-          warn(
-            "%s(...) is deprecated in plain JavaScript React classes. %s",
-            info[0],
-            info[1]
-          );
-        }
-      });
-    }
-    function getIteratorFn(maybeIterable) {
-      if (null === maybeIterable || "object" !== typeof maybeIterable)
-        return null;
-      maybeIterable =
-        (MAYBE_ITERATOR_SYMBOL && maybeIterable[MAYBE_ITERATOR_SYMBOL]) ||
-        maybeIterable["@@iterator"];
-      return "function" === typeof maybeIterable ? maybeIterable : null;
-    }
     function warn(format) {
       for (
         var _len = arguments.length,
@@ -60,32 +41,13 @@
       args.unshift(format);
       Function.prototype.apply.call(console[level], console, args);
     }
-    function warnNoop(publicInstance, callerName) {
-      publicInstance =
-        ((publicInstance = publicInstance.constructor) &&
-          (publicInstance.displayName || publicInstance.name)) ||
-        "ReactClass";
-      var warningKey = publicInstance + "." + callerName;
-      didWarnStateUpdateForUnmountedComponent[warningKey] ||
-        (error$jscomp$0(
-          "Can't call %s on a component that is not yet mounted. This is a no-op, but it might indicate a bug in your application. Instead, assign to `this.state` directly or define a `state = {};` class property with the desired state in the %s component.",
-          callerName,
-          publicInstance
-        ),
-        (didWarnStateUpdateForUnmountedComponent[warningKey] = !0));
-    }
-    function Component(props, context, updater) {
-      this.props = props;
-      this.context = context;
-      this.refs = emptyObject;
-      this.updater = updater || ReactNoopUpdateQueue;
-    }
-    function ComponentDummy() {}
-    function PureComponent(props, context, updater) {
-      this.props = props;
-      this.context = context;
-      this.refs = emptyObject;
-      this.updater = updater || ReactNoopUpdateQueue;
+    function getIteratorFn(maybeIterable) {
+      if (null === maybeIterable || "object" !== typeof maybeIterable)
+        return null;
+      maybeIterable =
+        (MAYBE_ITERATOR_SYMBOL && maybeIterable[MAYBE_ITERATOR_SYMBOL]) ||
+        maybeIterable["@@iterator"];
+      return "function" === typeof maybeIterable ? maybeIterable : null;
     }
     function typeName(value) {
       return (
@@ -519,21 +481,6 @@
       }
       return void 0 !== config.key;
     }
-    function warnIfStringRefCannotBeAutoConverted(config, self) {
-      var owner;
-      "string" === typeof config.ref &&
-        (owner = getOwner()) &&
-        self &&
-        owner.stateNode !== self &&
-        ((self = getComponentNameFromType(owner.type)),
-        didWarnAboutStringRefs[self] ||
-          (error$jscomp$0(
-            'Component "%s" contains the string ref "%s". Support for string refs will be removed in a future major release. This case cannot be automatically converted to an arrow function. We ask you to manually fix this case by using useRef() or createRef() instead. Learn more about using refs safely here: https://react.dev/link/strict-mode-string-ref',
-            getComponentNameFromType(owner.type),
-            config.ref
-          ),
-          (didWarnAboutStringRefs[self] = !0)));
-    }
     function defineKeyPropWarningGetter(props, displayName) {
       function warnAboutAccessingKey() {
         specialPropKeyWarningShown ||
@@ -589,110 +536,6 @@
       });
       Object.freeze && (Object.freeze(type.props), Object.freeze(type));
       return type;
-    }
-    function jsxDEVImpl(
-      type,
-      config,
-      maybeKey,
-      isStaticChildren,
-      source,
-      self
-    ) {
-      if (isValidElementType(type)) {
-        var children = config.children;
-        if (void 0 !== children)
-          if (isStaticChildren)
-            if (isArrayImpl(children)) {
-              for (
-                isStaticChildren = 0;
-                isStaticChildren < children.length;
-                isStaticChildren++
-              )
-                validateChildKeys(children[isStaticChildren], type);
-              Object.freeze && Object.freeze(children);
-            } else
-              error$jscomp$0(
-                "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead."
-              );
-          else validateChildKeys(children, type);
-      } else {
-        children = "";
-        if (
-          void 0 === type ||
-          ("object" === typeof type &&
-            null !== type &&
-            0 === Object.keys(type).length)
-        )
-          children +=
-            " You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.";
-        null === type
-          ? (isStaticChildren = "null")
-          : isArrayImpl(type)
-          ? (isStaticChildren = "array")
-          : void 0 !== type && type.$$typeof === REACT_ELEMENT_TYPE
-          ? ((isStaticChildren =
-              "<" + (getComponentNameFromType(type.type) || "Unknown") + " />"),
-            (children =
-              " Did you accidentally export a JSX literal instead of a component?"))
-          : (isStaticChildren = typeof type);
-        error$jscomp$0(
-          "React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: %s.%s",
-          isStaticChildren,
-          children
-        );
-      }
-      if (hasOwnProperty.call(config, "key")) {
-        children = getComponentNameFromType(type);
-        var keys = Object.keys(config).filter(function (k) {
-          return "key" !== k;
-        });
-        isStaticChildren =
-          0 < keys.length
-            ? "{key: someKey, " + keys.join(": ..., ") + ": ...}"
-            : "{key: someKey}";
-        didWarnAboutKeySpread[children + isStaticChildren] ||
-          ((keys =
-            0 < keys.length ? "{" + keys.join(": ..., ") + ": ...}" : "{}"),
-          error$jscomp$0(
-            'A props object containing a "key" prop is being spread into JSX:\n  let props = %s;\n  <%s {...props} />\nReact keys must be passed directly to JSX without using spread:\n  let props = %s;\n  <%s key={someKey} {...props} />',
-            isStaticChildren,
-            children,
-            keys,
-            children
-          ),
-          (didWarnAboutKeySpread[children + isStaticChildren] = !0));
-      }
-      children = null;
-      void 0 !== maybeKey &&
-        (checkKeyStringCoercion(maybeKey), (children = "" + maybeKey));
-      hasValidKey(config) &&
-        (checkKeyStringCoercion(config.key), (children = "" + config.key));
-      hasValidRef(config) && warnIfStringRefCannotBeAutoConverted(config, self);
-      maybeKey = {};
-      for (var propName in config)
-        "key" !== propName &&
-          ("ref" === propName
-            ? (maybeKey.ref = coerceStringRef(
-                config[propName],
-                getOwner(),
-                type
-              ))
-            : (maybeKey[propName] = config[propName]));
-      children &&
-        ((config =
-          "function" === typeof type
-            ? type.displayName || type.name || "Unknown"
-            : type),
-        children && defineKeyPropWarningGetter(maybeKey, config));
-      return ReactElement(
-        type,
-        children,
-        null,
-        self,
-        source,
-        getOwner(),
-        maybeKey
-      );
     }
     function cloneAndReplaceKey(oldElement, newKey) {
       newKey = ReactElement(
@@ -1020,6 +863,14 @@
       });
       return result;
     }
+    function resolveDispatcher() {
+      var dispatcher = ReactSharedInternals.H;
+      null === dispatcher &&
+        error$jscomp$0(
+          "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem."
+        );
+      return dispatcher;
+    }
     function lazyInitializer(payload) {
       if (-1 === payload._status) {
         var ctor = payload._result;
@@ -1054,107 +905,27 @@
         );
       throw payload._result;
     }
-    function resolveDispatcher() {
-      var dispatcher = ReactSharedInternals.H;
-      null === dispatcher &&
-        error$jscomp$0(
-          "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem."
-        );
-      return dispatcher;
+    function createCacheRoot() {
+      return new WeakMap();
     }
-    function useMemoCache(size) {
-      return resolveDispatcher().useMemoCache(size);
+    function createCacheNode() {
+      return { s: 0, v: void 0, o: null, p: null };
     }
     function noop() {}
-    function enqueueTask(task) {
-      if (null === enqueueTaskImpl)
-        try {
-          var requireString = ("require" + Math.random()).slice(0, 7);
-          enqueueTaskImpl = (module && module[requireString]).call(
-            module,
-            "timers"
-          ).setImmediate;
-        } catch (_err) {
-          enqueueTaskImpl = function (callback) {
-            !1 === didWarnAboutMessageChannel &&
-              ((didWarnAboutMessageChannel = !0),
-              "undefined" === typeof MessageChannel &&
-                error$jscomp$0(
-                  "This browser does not have a MessageChannel implementation, so enqueuing tasks via await act(async () => ...) will fail. Please file an issue at https://github.com/facebook/react/issues if you encounter this warning."
-                ));
-            var channel = new MessageChannel();
-            channel.port1.onmessage = callback;
-            channel.port2.postMessage(void 0);
-          };
-        }
-      return enqueueTaskImpl(task);
+    function cleanup(entryValue) {
+      var entry = TaintRegistryValues.get(entryValue);
+      void 0 !== entry &&
+        (TaintRegistryPendingRequests.forEach(function (requestQueue) {
+          requestQueue.push(entryValue);
+          entry.count++;
+        }),
+        1 === entry.count
+          ? TaintRegistryValues.delete(entryValue)
+          : entry.count--);
     }
-    function aggregateErrors(errors) {
-      return 1 < errors.length && "function" === typeof AggregateError
-        ? new AggregateError(errors)
-        : errors[0];
-    }
-    function popActScope(prevActQueue, prevActScopeDepth) {
-      prevActScopeDepth !== actScopeDepth - 1 &&
-        error$jscomp$0(
-          "You seem to have overlapping act() calls, this is not supported. Be sure to await previous act() calls before making a new one. "
-        );
-      actScopeDepth = prevActScopeDepth;
-    }
-    function recursivelyFlushAsyncActWork(returnValue, resolve, reject) {
-      var queue = ReactSharedInternals.actQueue;
-      if (null !== queue)
-        if (0 !== queue.length)
-          try {
-            flushActQueue(queue);
-            enqueueTask(function () {
-              return recursivelyFlushAsyncActWork(returnValue, resolve, reject);
-            });
-            return;
-          } catch (error$5) {
-            ReactSharedInternals.thrownErrors.push(error$5);
-          }
-        else ReactSharedInternals.actQueue = null;
-      0 < ReactSharedInternals.thrownErrors.length
-        ? ((queue = aggregateErrors(ReactSharedInternals.thrownErrors)),
-          (ReactSharedInternals.thrownErrors.length = 0),
-          reject(queue))
-        : resolve(returnValue);
-    }
-    function flushActQueue(queue) {
-      if (!isFlushing) {
-        isFlushing = !0;
-        var i = 0;
-        try {
-          for (; i < queue.length; i++) {
-            var callback = queue[i];
-            do {
-              ReactSharedInternals.didUsePromise = !1;
-              var continuation = callback(!1);
-              if (null !== continuation) {
-                if (ReactSharedInternals.didUsePromise) {
-                  queue[i] = callback;
-                  queue.splice(0, i);
-                  return;
-                }
-                callback = continuation;
-              } else break;
-            } while (1);
-          }
-          queue.length = 0;
-        } catch (error$6) {
-          queue.splice(0, i + 1),
-            ReactSharedInternals.thrownErrors.push(error$6);
-        } finally {
-          isFlushing = !1;
-        }
-      }
-    }
-    "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
-      "function" ===
-        typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart &&
-      __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-    var REACT_ELEMENT_TYPE = Symbol.for("react.element"),
+    var ReactSharedInternals = { H: null, A: null, getCurrentStack: null },
+      isArrayImpl = Array.isArray,
+      REACT_ELEMENT_TYPE = Symbol.for("react.element"),
       REACT_PORTAL_TYPE = Symbol.for("react.portal"),
       REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"),
       REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"),
@@ -1171,76 +942,11 @@
       REACT_DEBUG_TRACING_MODE_TYPE = Symbol.for("react.debug_trace_mode"),
       REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
       REACT_LEGACY_HIDDEN_TYPE = Symbol.for("react.legacy_hidden"),
-      REACT_TRACING_MARKER_TYPE = Symbol.for("react.tracing_marker"),
+      REACT_POSTPONE_TYPE = Symbol.for("react.postpone"),
       MAYBE_ITERATOR_SYMBOL = Symbol.iterator,
-      ReactSharedInternals = {
-        H: null,
-        A: null,
-        T: null,
-        S: null,
-        actQueue: null,
-        isBatchingLegacy: !1,
-        didScheduleLegacyUpdate: !1,
-        didUsePromise: !1,
-        thrownErrors: [],
-        getCurrentStack: null
-      },
-      didWarnStateUpdateForUnmountedComponent = {},
-      ReactNoopUpdateQueue = {
-        isMounted: function () {
-          return !1;
-        },
-        enqueueForceUpdate: function (publicInstance) {
-          warnNoop(publicInstance, "forceUpdate");
-        },
-        enqueueReplaceState: function (publicInstance) {
-          warnNoop(publicInstance, "replaceState");
-        },
-        enqueueSetState: function (publicInstance) {
-          warnNoop(publicInstance, "setState");
-        }
-      },
-      assign = Object.assign,
-      emptyObject = {};
-    Object.freeze(emptyObject);
-    Component.prototype.isReactComponent = {};
-    Component.prototype.setState = function (partialState, callback) {
-      if (
-        "object" !== typeof partialState &&
-        "function" !== typeof partialState &&
-        null != partialState
-      )
-        throw Error(
-          "takes an object of state variables to update or a function which returns an object of state variables."
-        );
-      this.updater.enqueueSetState(this, partialState, callback, "setState");
-    };
-    Component.prototype.forceUpdate = function (callback) {
-      this.updater.enqueueForceUpdate(this, callback, "forceUpdate");
-    };
-    var deprecatedAPIs = {
-        isMounted: [
-          "isMounted",
-          "Instead, make sure to clean up subscriptions and pending requests in componentWillUnmount to prevent memory leaks."
-        ],
-        replaceState: [
-          "replaceState",
-          "Refactor your code to use setState instead (see https://github.com/facebook/react/issues/3236)."
-        ]
-      },
-      fnName;
-    for (fnName in deprecatedAPIs)
-      deprecatedAPIs.hasOwnProperty(fnName) &&
-        defineDeprecationWarning(fnName, deprecatedAPIs[fnName]);
-    ComponentDummy.prototype = Component.prototype;
-    var pureComponentPrototype = (PureComponent.prototype =
-      new ComponentDummy());
-    pureComponentPrototype.constructor = PureComponent;
-    assign(pureComponentPrototype, Component.prototype);
-    pureComponentPrototype.isPureReactComponent = !0;
-    var isArrayImpl = Array.isArray,
       REACT_CLIENT_REFERENCE$2 = Symbol.for("react.client.reference"),
       hasOwnProperty = Object.prototype.hasOwnProperty,
+      assign = Object.assign,
       REACT_CLIENT_REFERENCE$1 = Symbol.for("react.client.reference"),
       disabledDepth = 0,
       prevLog,
@@ -1261,8 +967,7 @@
       didWarnAboutOldJSXRuntime;
     var didWarnAboutStringRefs = {};
     var didWarnAboutElementRef = {};
-    var didWarnAboutKeySpread = {},
-      ownerHasKeyUseWarning = {},
+    var ownerHasKeyUseWarning = {},
       didWarnAboutMaps = !1,
       userProvidedKeyEscapeRegex = /\/+/g,
       reportGlobalError =
@@ -1294,19 +999,12 @@
               }
               console.error(error);
             },
-      didWarnAboutMessageChannel = !1,
-      enqueueTaskImpl = null,
-      actScopeDepth = 0,
-      didWarnNoAwaitAct = !1,
-      isFlushing = !1,
-      queueSeveralMicrotasks =
-        "function" === typeof queueMicrotask
-          ? function (callback) {
-              queueMicrotask(function () {
-                return queueMicrotask(callback);
-              });
-            }
-          : enqueueTask;
+      TaintRegistryValues = ReactSharedInternals.TaintRegistryValues,
+      TaintRegistryPendingRequests =
+        ReactSharedInternals.TaintRegistryPendingRequests;
+    "function" === typeof FinalizationRegistry
+      ? new FinalizationRegistry(cleanup)
+      : null;
     exports.Children = {
       map: mapChildren,
       forEach: function (children, forEachFunc, forEachContext) {
@@ -1340,132 +1038,61 @@
         return children;
       }
     };
-    exports.Component = Component;
     exports.Fragment = REACT_FRAGMENT_TYPE;
     exports.Profiler = REACT_PROFILER_TYPE;
-    exports.PureComponent = PureComponent;
     exports.StrictMode = REACT_STRICT_MODE_TYPE;
     exports.Suspense = REACT_SUSPENSE_TYPE;
-    exports.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
+    exports.__SERVER_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
       ReactSharedInternals;
-    exports.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED =
-      ReactSharedInternals;
-    exports.act = function (callback) {
-      var prevActQueue = ReactSharedInternals.actQueue,
-        prevActScopeDepth = actScopeDepth;
-      actScopeDepth++;
-      var queue = (ReactSharedInternals.actQueue =
-          null !== prevActQueue ? prevActQueue : []),
-        didAwaitActCall = !1;
-      try {
-        var result = callback();
-      } catch (error$3) {
-        ReactSharedInternals.thrownErrors.push(error$3);
-      }
-      if (0 < ReactSharedInternals.thrownErrors.length)
-        throw (
-          (popActScope(prevActQueue, prevActScopeDepth),
-          (callback = aggregateErrors(ReactSharedInternals.thrownErrors)),
-          (ReactSharedInternals.thrownErrors.length = 0),
-          callback)
-        );
-      if (
-        null !== result &&
-        "object" === typeof result &&
-        "function" === typeof result.then
-      ) {
-        var thenable = result;
-        queueSeveralMicrotasks(function () {
-          didAwaitActCall ||
-            didWarnNoAwaitAct ||
-            ((didWarnNoAwaitAct = !0),
-            error$jscomp$0(
-              "You called act(async () => ...) without await. This could lead to unexpected testing behaviour, interleaving multiple act calls and mixing their scopes. You should - await act(async () => ...);"
-            ));
-        });
-        return {
-          then: function (resolve, reject) {
-            didAwaitActCall = !0;
-            thenable.then(
-              function (returnValue) {
-                popActScope(prevActQueue, prevActScopeDepth);
-                if (0 === prevActScopeDepth) {
-                  try {
-                    flushActQueue(queue),
-                      enqueueTask(function () {
-                        return recursivelyFlushAsyncActWork(
-                          returnValue,
-                          resolve,
-                          reject
-                        );
-                      });
-                  } catch (error$4) {
-                    ReactSharedInternals.thrownErrors.push(error$4);
-                  }
-                  if (0 < ReactSharedInternals.thrownErrors.length) {
-                    var _thrownError = aggregateErrors(
-                      ReactSharedInternals.thrownErrors
-                    );
-                    ReactSharedInternals.thrownErrors.length = 0;
-                    reject(_thrownError);
-                  }
-                } else resolve(returnValue);
-              },
-              function (error) {
-                popActScope(prevActQueue, prevActScopeDepth);
-                0 < ReactSharedInternals.thrownErrors.length
-                  ? ((error = aggregateErrors(
-                      ReactSharedInternals.thrownErrors
-                    )),
-                    (ReactSharedInternals.thrownErrors.length = 0),
-                    reject(error))
-                  : reject(error);
-              }
-            );
-          }
-        };
-      }
-      var returnValue$jscomp$0 = result;
-      popActScope(prevActQueue, prevActScopeDepth);
-      0 === prevActScopeDepth &&
-        (flushActQueue(queue),
-        0 !== queue.length &&
-          queueSeveralMicrotasks(function () {
-            didAwaitActCall ||
-              didWarnNoAwaitAct ||
-              ((didWarnNoAwaitAct = !0),
-              error$jscomp$0(
-                "A component suspended inside an `act` scope, but the `act` call was not awaited. When testing React components that depend on asynchronous data, you must await the result:\n\nawait act(() => ...)"
-              ));
-          }),
-        (ReactSharedInternals.actQueue = null));
-      if (0 < ReactSharedInternals.thrownErrors.length)
-        throw (
-          ((callback = aggregateErrors(ReactSharedInternals.thrownErrors)),
-          (ReactSharedInternals.thrownErrors.length = 0),
-          callback)
-        );
-      return {
-        then: function (resolve, reject) {
-          didAwaitActCall = !0;
-          0 === prevActScopeDepth
-            ? ((ReactSharedInternals.actQueue = queue),
-              enqueueTask(function () {
-                return recursivelyFlushAsyncActWork(
-                  returnValue$jscomp$0,
-                  resolve,
-                  reject
-                );
-              }))
-            : resolve(returnValue$jscomp$0);
+    exports.cache = function (fn) {
+      return function () {
+        var dispatcher = ReactSharedInternals.A;
+        if (!dispatcher) return fn.apply(null, arguments);
+        var fnMap = dispatcher.getCacheForType(createCacheRoot);
+        dispatcher = fnMap.get(fn);
+        void 0 === dispatcher &&
+          ((dispatcher = createCacheNode()), fnMap.set(fn, dispatcher));
+        fnMap = 0;
+        for (var l = arguments.length; fnMap < l; fnMap++) {
+          var arg = arguments[fnMap];
+          if (
+            "function" === typeof arg ||
+            ("object" === typeof arg && null !== arg)
+          ) {
+            var objectCache = dispatcher.o;
+            null === objectCache &&
+              (dispatcher.o = objectCache = new WeakMap());
+            dispatcher = objectCache.get(arg);
+            void 0 === dispatcher &&
+              ((dispatcher = createCacheNode()),
+              objectCache.set(arg, dispatcher));
+          } else
+            (objectCache = dispatcher.p),
+              null === objectCache && (dispatcher.p = objectCache = new Map()),
+              (dispatcher = objectCache.get(arg)),
+              void 0 === dispatcher &&
+                ((dispatcher = createCacheNode()),
+                objectCache.set(arg, dispatcher));
+        }
+        if (1 === dispatcher.s) return dispatcher.v;
+        if (2 === dispatcher.s) throw dispatcher.v;
+        try {
+          var result = fn.apply(null, arguments);
+          fnMap = dispatcher;
+          fnMap.s = 1;
+          return (fnMap.v = result);
+        } catch (error$2) {
+          throw (
+            ((result = dispatcher),
+            (result.s = 2),
+            (result.v = error$2),
+            error$2)
+          );
         }
       };
     };
-    exports.c = useMemoCache;
-    exports.cache = function (fn) {
-      return function () {
-        return fn.apply(null, arguments);
-      };
+    exports.captureOwnerStack = function () {
+      return null;
     };
     exports.cloneElement = function (element, config, children) {
       if (null === element || void 0 === element)
@@ -1514,24 +1141,6 @@
         validateChildKeys(arguments[key], props.type);
       return props;
     };
-    exports.createContext = function (defaultValue) {
-      defaultValue = {
-        $$typeof: REACT_CONTEXT_TYPE,
-        _currentValue: defaultValue,
-        _currentValue2: defaultValue,
-        _threadCount: 0,
-        Provider: null,
-        Consumer: null
-      };
-      defaultValue.Provider = defaultValue;
-      defaultValue.Consumer = {
-        $$typeof: REACT_CONSUMER_TYPE,
-        _context: defaultValue
-      };
-      defaultValue._currentRenderer = null;
-      defaultValue._currentRenderer2 = null;
-      return defaultValue;
-    };
     exports.createElement = function (type, config, children) {
       if (isValidElementType(type))
         for (var i = 2; i < arguments.length; i++)
@@ -1566,19 +1175,33 @@
       }
       i = {};
       typeString = null;
-      if (null != config)
-        for (propName in (didWarnAboutOldJSXRuntime ||
+      if (null != config) {
+        didWarnAboutOldJSXRuntime ||
           !("__self" in config) ||
           "key" in config ||
           ((didWarnAboutOldJSXRuntime = !0),
           warn(
             "Your app (or one of its dependencies) is using an outdated JSX transform. Update to the modern JSX transform for faster performance: https://react.dev/link/new-jsx-transform"
-          )),
-        hasValidRef(config) &&
-          warnIfStringRefCannotBeAutoConverted(config, config.__self),
+          ));
+        if (hasValidRef(config)) {
+          var self = config.__self,
+            owner;
+          "string" === typeof config.ref &&
+            (owner = getOwner()) &&
+            self &&
+            owner.stateNode !== self &&
+            ((self = getComponentNameFromType(owner.type)),
+            didWarnAboutStringRefs[self] ||
+              (error$jscomp$0(
+                'Component "%s" contains the string ref "%s". Support for string refs will be removed in a future major release. This case cannot be automatically converted to an arrow function. We ask you to manually fix this case by using useRef() or createRef() instead. Learn more about using refs safely here: https://react.dev/link/strict-mode-string-ref',
+                getComponentNameFromType(owner.type),
+                config.ref
+              ),
+              (didWarnAboutStringRefs[self] = !0)));
+        }
         hasValidKey(config) &&
-          (checkKeyStringCoercion(config.key), (typeString = "" + config.key)),
-        config))
+          (checkKeyStringCoercion(config.key), (typeString = "" + config.key));
+        for (propName in config)
           hasOwnProperty.call(config, propName) &&
             "key" !== propName &&
             "__self" !== propName &&
@@ -1586,21 +1209,18 @@
             ("ref" === propName
               ? (i.ref = coerceStringRef(config[propName], getOwner(), type))
               : (i[propName] = config[propName]));
-      var childrenLength = arguments.length - 2;
-      if (1 === childrenLength) i.children = children;
-      else if (1 < childrenLength) {
-        for (
-          var childArray = Array(childrenLength), _i = 0;
-          _i < childrenLength;
-          _i++
-        )
-          childArray[_i] = arguments[_i + 2];
-        Object.freeze && Object.freeze(childArray);
-        i.children = childArray;
+      }
+      owner = arguments.length - 2;
+      if (1 === owner) i.children = children;
+      else if (1 < owner) {
+        self = Array(owner);
+        for (var _i = 0; _i < owner; _i++) self[_i] = arguments[_i + 2];
+        Object.freeze && Object.freeze(self);
+        i.children = self;
       }
       if (type && type.defaultProps)
-        for (propName in ((childrenLength = type.defaultProps), childrenLength))
-          void 0 === i[propName] && (i[propName] = childrenLength[propName]);
+        for (propName in ((owner = type.defaultProps), owner))
+          void 0 === i[propName] && (i[propName] = owner[propName]);
       if (typeString) {
         var propName =
           "function" === typeof type
@@ -1623,8 +1243,11 @@
       Object.seal(refObject);
       return refObject;
     };
-    exports.experimental_useEffectEvent = function (callback) {
-      return resolveDispatcher().useEffectEvent(callback);
+    exports.experimental_taintObjectReference = function () {
+      throw Error("Not implemented.");
+    };
+    exports.experimental_taintUniqueValue = function () {
+      throw Error("Not implemented.");
     };
     exports.forwardRef = function (render) {
       null != render && render.$$typeof === REACT_MEMO_TYPE
@@ -1668,22 +1291,6 @@
       return elementType;
     };
     exports.isValidElement = isValidElement;
-    exports.jsx = function (type, config, maybeKey, source, self) {
-      return jsxDEVImpl(type, config, maybeKey, !1, source, self);
-    };
-    exports.jsxDEV = function (
-      type,
-      config,
-      maybeKey,
-      isStaticChildren,
-      source,
-      self
-    ) {
-      return jsxDEVImpl(type, config, maybeKey, isStaticChildren, source, self);
-    };
-    exports.jsxs = function (type, config, maybeKey, source, self) {
-      return jsxDEVImpl(type, config, maybeKey, !0, source, self);
-    };
     exports.lazy = function (ctor) {
       return {
         $$typeof: REACT_LAZY_TYPE,
@@ -1734,8 +1341,8 @@
           null !== returnValue &&
           "function" === typeof returnValue.then &&
           returnValue.then(noop, reportGlobalError);
-      } catch (error$2) {
-        reportGlobalError(error$2);
+      } catch (error$3) {
+        reportGlobalError(error$3);
       } finally {
         null === prevTransition &&
           currentTransition._updatedFibers &&
@@ -1748,22 +1355,19 @@
           (ReactSharedInternals.T = prevTransition);
       }
     };
-    exports.unstable_Activity = REACT_OFFSCREEN_TYPE;
     exports.unstable_DebugTracingMode = REACT_DEBUG_TRACING_MODE_TYPE;
-    exports.unstable_LegacyHidden = REACT_LEGACY_HIDDEN_TYPE;
-    exports.unstable_Scope = REACT_SCOPE_TYPE;
-    exports.unstable_SuspenseList = REACT_SUSPENSE_LIST_TYPE;
-    exports.unstable_TracingMarker = REACT_TRACING_MARKER_TYPE;
+    exports.unstable_SuspenseList = REACT_SUSPENSE_TYPE;
     exports.unstable_getCacheForType = function (resourceType) {
       var dispatcher = ReactSharedInternals.A;
       return dispatcher
         ? dispatcher.getCacheForType(resourceType)
         : resourceType();
     };
-    exports.unstable_useCacheRefresh = function () {
-      return resolveDispatcher().useCacheRefresh();
+    exports.unstable_postpone = function (reason) {
+      reason = Error(reason);
+      reason.$$typeof = REACT_POSTPONE_TYPE;
+      throw reason;
     };
-    exports.unstable_useMemoCache = useMemoCache;
     exports.use = function (usable) {
       return resolveDispatcher().use(usable);
     };
@@ -1777,67 +1381,14 @@
     exports.useCallback = function (callback, deps) {
       return resolveDispatcher().useCallback(callback, deps);
     };
-    exports.useContext = function (Context) {
-      var dispatcher = resolveDispatcher();
-      Context.$$typeof === REACT_CONSUMER_TYPE &&
-        error$jscomp$0(
-          "Calling useContext(Context.Consumer) is not supported and will cause bugs. Did you mean to call useContext(Context) instead?"
-        );
-      return dispatcher.useContext(Context);
-    };
     exports.useDebugValue = function (value, formatterFn) {
       return resolveDispatcher().useDebugValue(value, formatterFn);
-    };
-    exports.useDeferredValue = function (value, initialValue) {
-      return resolveDispatcher().useDeferredValue(value, initialValue);
-    };
-    exports.useEffect = function (create, deps) {
-      return resolveDispatcher().useEffect(create, deps);
     };
     exports.useId = function () {
       return resolveDispatcher().useId();
     };
-    exports.useImperativeHandle = function (ref, create, deps) {
-      return resolveDispatcher().useImperativeHandle(ref, create, deps);
-    };
-    exports.useInsertionEffect = function (create, deps) {
-      return resolveDispatcher().useInsertionEffect(create, deps);
-    };
-    exports.useLayoutEffect = function (create, deps) {
-      return resolveDispatcher().useLayoutEffect(create, deps);
-    };
     exports.useMemo = function (create, deps) {
       return resolveDispatcher().useMemo(create, deps);
     };
-    exports.useOptimistic = function (passthrough, reducer) {
-      return resolveDispatcher().useOptimistic(passthrough, reducer);
-    };
-    exports.useReducer = function (reducer, initialArg, init) {
-      return resolveDispatcher().useReducer(reducer, initialArg, init);
-    };
-    exports.useRef = function (initialValue) {
-      return resolveDispatcher().useRef(initialValue);
-    };
-    exports.useState = function (initialState) {
-      return resolveDispatcher().useState(initialState);
-    };
-    exports.useSyncExternalStore = function (
-      subscribe,
-      getSnapshot,
-      getServerSnapshot
-    ) {
-      return resolveDispatcher().useSyncExternalStore(
-        subscribe,
-        getSnapshot,
-        getServerSnapshot
-      );
-    };
-    exports.useTransition = function () {
-      return resolveDispatcher().useTransition();
-    };
     exports.version = "19.0.0-rc--";
-    "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
-      "function" ===
-        typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&
-      __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
   })();

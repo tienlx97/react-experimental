@@ -1,6 +1,6 @@
 /**
  * @license React
- * react-jsx-runtime.development.js
+ * react-jsx-dev-runtime.react-server.development.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -22,8 +22,8 @@
         args[_key2 - 1] = arguments[_key2];
       _len2 = format;
       _key2 = Error("react-stack-top-frame");
-      ReactSharedInternals.getCurrentStack &&
-        ((_key2 = ReactSharedInternals.getCurrentStack(_key2)),
+      ReactSharedInternalsServer.getCurrentStack &&
+        ((_key2 = ReactSharedInternalsServer.getCurrentStack(_key2)),
         "" !== _key2 && ((_len2 += "%s"), (args = args.concat([_key2]))));
       args.unshift(_len2);
       Function.prototype.apply.call(console.error, console, args);
@@ -178,8 +178,8 @@
       frame = Error.prepareStackTrace;
       Error.prepareStackTrace = void 0;
       var previousDispatcher = null;
-      previousDispatcher = ReactSharedInternals.H;
-      ReactSharedInternals.H = null;
+      previousDispatcher = ReactSharedInternalsServer.H;
+      ReactSharedInternalsServer.H = null;
       disableLogs();
       var RunInRootFrame = {
         DetermineComponentFrameRoot: function () {
@@ -312,7 +312,7 @@
         }
       } finally {
         (reentry = !1),
-          (ReactSharedInternals.H = previousDispatcher),
+          (ReactSharedInternalsServer.H = previousDispatcher),
           reenableLogs(),
           (Error.prepareStackTrace = frame);
       }
@@ -420,7 +420,7 @@
       return null;
     }
     function getOwner() {
-      var dispatcher = ReactSharedInternals.A;
+      var dispatcher = ReactSharedInternalsServer.A;
       return null === dispatcher ? null : dispatcher.getOwner();
     }
     function hasValidRef(config) {
@@ -687,8 +687,8 @@
             : "string" === typeof element._owner.name &&
               (childOwner = element._owner.name),
           (childOwner = " It was passed a child from " + childOwner + "."));
-        var prevGetCurrentStack = ReactSharedInternals.getCurrentStack;
-        ReactSharedInternals.getCurrentStack = function () {
+        var prevGetCurrentStack = ReactSharedInternalsServer.getCurrentStack;
+        ReactSharedInternalsServer.getCurrentStack = function () {
           var stack = describeUnknownElementTypeFrameInDEV(element.type);
           prevGetCurrentStack && (stack += prevGetCurrentStack() || "");
           return stack;
@@ -698,7 +698,7 @@
           parentType,
           childOwner
         );
-        ReactSharedInternals.getCurrentStack = prevGetCurrentStack;
+        ReactSharedInternalsServer.getCurrentStack = prevGetCurrentStack;
       }
     }
     function getCurrentComponentErrorInfo(parentType) {
@@ -782,9 +782,13 @@
       REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
       REACT_LEGACY_HIDDEN_TYPE = Symbol.for("react.legacy_hidden"),
       MAYBE_ITERATOR_SYMBOL = Symbol.iterator,
-      ReactSharedInternals =
-        React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
-      REACT_CLIENT_REFERENCE$2 = Symbol.for("react.client.reference"),
+      ReactSharedInternalsServer =
+        React.__SERVER_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    if (!ReactSharedInternalsServer)
+      throw Error(
+        'The "react" package in this environment is not configured correctly. The "react-server" condition must be enabled in any environment that runs React Server Components.'
+      );
+    var REACT_CLIENT_REFERENCE$2 = Symbol.for("react.client.reference"),
       hasOwnProperty = Object.prototype.hasOwnProperty,
       assign = Object.assign,
       REACT_CLIENT_REFERENCE$1 = Symbol.for("react.client.reference"),
@@ -812,6 +816,16 @@
     exports.Fragment = REACT_FRAGMENT_TYPE;
     exports.jsx = function (type, config, maybeKey, source, self) {
       return jsxDEVImpl(type, config, maybeKey, !1, source, self);
+    };
+    exports.jsxDEV = function (
+      type,
+      config,
+      maybeKey,
+      isStaticChildren,
+      source,
+      self
+    ) {
+      return jsxDEVImpl(type, config, maybeKey, isStaticChildren, source, self);
     };
     exports.jsxs = function (type, config, maybeKey, source, self) {
       return jsxDEVImpl(type, config, maybeKey, !0, source, self);
