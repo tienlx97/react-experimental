@@ -386,6 +386,7 @@ exports.__COMPILER_RUNTIME = ReactCompilerRuntime;
 exports.act = function () {
   throw Error("act(...) is not supported in production builds of React.");
 };
+exports.c = useMemoCache;
 exports.cache = function (fn) {
   return function () {
     return fn.apply(null, arguments);
@@ -528,8 +529,8 @@ exports.unstable_postpone = function (reason) {
 exports.unstable_useCacheRefresh = function () {
   return ReactSharedInternals.H.useCacheRefresh();
 };
-exports.unstable_useContextWithBailout = function () {
-  throw Error("Not implemented.");
+exports.unstable_useContextWithBailout = function (context, select) {
+  return ReactSharedInternals.H.unstable_useContextWithBailout(context, select);
 };
 exports.unstable_useMemoCache = useMemoCache;
 exports.use = function (usable) {
@@ -590,4 +591,4 @@ exports.useSyncExternalStore = function (
 exports.useTransition = function () {
   return ReactSharedInternals.H.useTransition();
 };
-exports.version = "19.0.0-experimental-7aa5dda3-20241114";
+exports.version = "19.0.0-rc-7aa5dda3-20241114";

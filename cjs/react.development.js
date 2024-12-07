@@ -960,6 +960,7 @@
         }
       };
     };
+    exports.c = useMemoCache;
     exports.cache = function (fn) {
       return function () {
         return fn.apply(null, arguments);
@@ -1301,8 +1302,13 @@
     exports.unstable_useCacheRefresh = function () {
       return resolveDispatcher().useCacheRefresh();
     };
-    exports.unstable_useContextWithBailout = function () {
-      throw Error("Not implemented.");
+    exports.unstable_useContextWithBailout = function (context, select) {
+      var dispatcher = resolveDispatcher();
+      context.$$typeof === REACT_CONSUMER_TYPE &&
+        console.error(
+          "Calling useContext(Context.Consumer) is not supported and will cause bugs. Did you mean to call useContext(Context) instead?"
+        );
+      return dispatcher.unstable_useContextWithBailout(context, select);
     };
     exports.unstable_useMemoCache = useMemoCache;
     exports.use = function (usable) {
@@ -1374,7 +1380,7 @@
     exports.useTransition = function () {
       return resolveDispatcher().useTransition();
     };
-    exports.version = "19.0.0-experimental-7aa5dda3-20241114";
+    exports.version = "19.0.0-rc-7aa5dda3-20241114";
     "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
       "function" ===
         typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&
