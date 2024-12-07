@@ -243,6 +243,81 @@
       Object.freeze && (Object.freeze(type.props), Object.freeze(type));
       return type;
     }
+    function jsxDEVImpl(
+      type,
+      config,
+      maybeKey,
+      isStaticChildren,
+      source,
+      self,
+      debugStack,
+      debugTask
+    ) {
+      var children = config.children;
+      if (void 0 !== children)
+        if (isStaticChildren)
+          if (isArrayImpl(children)) {
+            for (
+              isStaticChildren = 0;
+              isStaticChildren < children.length;
+              isStaticChildren++
+            )
+              validateChildKeys(children[isStaticChildren]);
+            Object.freeze && Object.freeze(children);
+          } else
+            console.error(
+              "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead."
+            );
+        else validateChildKeys(children);
+      if (hasOwnProperty.call(config, "key")) {
+        children = getComponentNameFromType(type);
+        var keys = Object.keys(config).filter(function (k) {
+          return "key" !== k;
+        });
+        isStaticChildren =
+          0 < keys.length
+            ? "{key: someKey, " + keys.join(": ..., ") + ": ...}"
+            : "{key: someKey}";
+        didWarnAboutKeySpread[children + isStaticChildren] ||
+          ((keys =
+            0 < keys.length ? "{" + keys.join(": ..., ") + ": ...}" : "{}"),
+          console.error(
+            'A props object containing a "key" prop is being spread into JSX:\n  let props = %s;\n  <%s {...props} />\nReact keys must be passed directly to JSX without using spread:\n  let props = %s;\n  <%s key={someKey} {...props} />',
+            isStaticChildren,
+            children,
+            keys,
+            children
+          ),
+          (didWarnAboutKeySpread[children + isStaticChildren] = !0));
+      }
+      children = null;
+      void 0 !== maybeKey &&
+        (checkKeyStringCoercion(maybeKey), (children = "" + maybeKey));
+      hasValidKey(config) &&
+        (checkKeyStringCoercion(config.key), (children = "" + config.key));
+      if ("key" in config) {
+        maybeKey = {};
+        for (var propName in config)
+          "key" !== propName && (maybeKey[propName] = config[propName]);
+      } else maybeKey = config;
+      children &&
+        defineKeyPropWarningGetter(
+          maybeKey,
+          "function" === typeof type
+            ? type.displayName || type.name || "Unknown"
+            : type
+        );
+      return ReactElement(
+        type,
+        children,
+        self,
+        source,
+        getOwner(),
+        maybeKey,
+        debugStack,
+        debugTask
+      );
+    }
     function cloneAndReplaceKey(oldElement, newKey) {
       newKey = ReactElement(
         oldElement.type,
@@ -256,6 +331,9 @@
       );
       newKey._store.validated = oldElement._store.validated;
       return newKey;
+    }
+    function validateChildKeys(node) {
+      isValidElement(node) && node._store && (node._store.validated = 1);
     }
     function isValidElement(object) {
       return (
@@ -492,6 +570,9 @@
         );
       return dispatcher;
     }
+    function useMemoCache(size) {
+      return resolveDispatcher().useMemoCache(size);
+    }
     function useOptimistic(passthrough, reducer) {
       return resolveDispatcher().useOptimistic(passthrough, reducer);
     }
@@ -599,6 +680,8 @@
       REACT_SCOPE_TYPE = Symbol.for("react.scope"),
       REACT_DEBUG_TRACING_MODE_TYPE = Symbol.for("react.debug_trace_mode"),
       REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
+      REACT_LEGACY_HIDDEN_TYPE = Symbol.for("react.legacy_hidden"),
+      REACT_TRACING_MARKER_TYPE = Symbol.for("react.tracing_marker"),
       REACT_POSTPONE_TYPE = Symbol.for("react.postpone"),
       MAYBE_ITERATOR_SYMBOL = Symbol.iterator,
       didWarnStateUpdateForUnmountedComponent = {},
@@ -678,7 +761,8 @@
       specialPropKeyWarningShown,
       didWarnAboutOldJSXRuntime;
     var didWarnAboutElementRef = {};
-    var didWarnAboutMaps = !1,
+    var didWarnAboutKeySpread = {},
+      didWarnAboutMaps = !1,
       userProvidedKeyEscapeRegex = /\/+/g,
       reportGlobalError =
         "function" === typeof reportError
@@ -722,6 +806,7 @@
               });
             }
           : enqueueTask;
+    deprecatedAPIs = { c: useMemoCache };
     exports.Children = {
       map: mapChildren,
       forEach: function (children, forEachFunc, forEachContext) {
@@ -763,11 +848,7 @@
     exports.Suspense = REACT_SUSPENSE_TYPE;
     exports.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
       ReactSharedInternals;
-    exports.__COMPILER_RUNTIME = {
-      c: function (size) {
-        return resolveDispatcher().useMemoCache(size);
-      }
-    };
+    exports.__COMPILER_RUNTIME = deprecatedAPIs;
     exports.act = function (callback) {
       var prevActQueue = ReactSharedInternals.actQueue,
         prevActScopeDepth = actScopeDepth;
@@ -944,8 +1025,7 @@
         element._debugTask
       );
       for (key = 2; key < arguments.length; key++)
-        (owner = arguments[key]),
-          isValidElement(owner) && owner._store && (owner._store.validated = 1);
+        validateChildKeys(arguments[key]);
       return props;
     };
     exports.createContext = function (defaultValue) {
@@ -967,13 +1047,11 @@
       return defaultValue;
     };
     exports.createElement = function (type, config, children) {
-      for (var i = 2; i < arguments.length; i++) {
-        var node = arguments[i];
-        isValidElement(node) && node._store && (node._store.validated = 1);
-      }
+      for (var i = 2; i < arguments.length; i++)
+        validateChildKeys(arguments[i]);
       var propName;
       i = {};
-      node = null;
+      var key = null;
       if (null != config)
         for (propName in (didWarnAboutOldJSXRuntime ||
           !("__self" in config) ||
@@ -983,7 +1061,7 @@
             "Your app (or one of its dependencies) is using an outdated JSX transform. Update to the modern JSX transform for faster performance: https://react.dev/link/new-jsx-transform"
           )),
         hasValidKey(config) &&
-          (checkKeyStringCoercion(config.key), (node = "" + config.key)),
+          (checkKeyStringCoercion(config.key), (key = "" + config.key)),
         config))
           hasOwnProperty.call(config, propName) &&
             "key" !== propName &&
@@ -1005,7 +1083,7 @@
       if (type && type.defaultProps)
         for (propName in ((childrenLength = type.defaultProps), childrenLength))
           void 0 === i[propName] && (i[propName] = childrenLength[propName]);
-      node &&
+      key &&
         defineKeyPropWarningGetter(
           i,
           "function" === typeof type
@@ -1014,7 +1092,7 @@
         );
       return ReactElement(
         type,
-        node,
+        key,
         void 0,
         void 0,
         getOwner(),
@@ -1079,6 +1157,49 @@
       return elementType;
     };
     exports.isValidElement = isValidElement;
+    exports.jsx = function (type, config, maybeKey, source, self) {
+      return jsxDEVImpl(
+        type,
+        config,
+        maybeKey,
+        !1,
+        source,
+        self,
+        Error("react-stack-top-frame"),
+        createTask(getTaskName(type))
+      );
+    };
+    exports.jsxDEV = function (
+      type,
+      config,
+      maybeKey,
+      isStaticChildren,
+      source,
+      self
+    ) {
+      return jsxDEVImpl(
+        type,
+        config,
+        maybeKey,
+        isStaticChildren,
+        source,
+        self,
+        Error("react-stack-top-frame"),
+        createTask(getTaskName(type))
+      );
+    };
+    exports.jsxs = function (type, config, maybeKey, source, self) {
+      return jsxDEVImpl(
+        type,
+        config,
+        maybeKey,
+        !0,
+        source,
+        self,
+        Error("react-stack-top-frame"),
+        createTask(getTaskName(type))
+      );
+    };
     exports.lazy = function (ctor) {
       return {
         $$typeof: REACT_LAZY_TYPE,
@@ -1094,6 +1215,7 @@
         type === REACT_STRICT_MODE_TYPE ||
         type === REACT_SUSPENSE_TYPE ||
         type === REACT_SUSPENSE_LIST_TYPE ||
+        type === REACT_LEGACY_HIDDEN_TYPE ||
         type === REACT_OFFSCREEN_TYPE ||
         type === REACT_SCOPE_TYPE ||
         ("object" === typeof type &&
@@ -1161,7 +1283,10 @@
     };
     exports.unstable_Activity = REACT_OFFSCREEN_TYPE;
     exports.unstable_DebugTracingMode = REACT_DEBUG_TRACING_MODE_TYPE;
+    exports.unstable_LegacyHidden = REACT_LEGACY_HIDDEN_TYPE;
+    exports.unstable_Scope = REACT_SCOPE_TYPE;
     exports.unstable_SuspenseList = REACT_SUSPENSE_LIST_TYPE;
+    exports.unstable_TracingMarker = REACT_TRACING_MARKER_TYPE;
     exports.unstable_getCacheForType = function (resourceType) {
       var dispatcher = ReactSharedInternals.A;
       return dispatcher
@@ -1176,6 +1301,10 @@
     exports.unstable_useCacheRefresh = function () {
       return resolveDispatcher().useCacheRefresh();
     };
+    exports.unstable_useContextWithBailout = function () {
+      throw Error("Not implemented.");
+    };
+    exports.unstable_useMemoCache = useMemoCache;
     exports.use = function (usable) {
       return resolveDispatcher().use(usable);
     };
@@ -1245,7 +1374,7 @@
     exports.useTransition = function () {
       return resolveDispatcher().useTransition();
     };
-    exports.version = "19.0.0-rc-7aa5dda3-20241114";
+    exports.version = "19.0.0-experimental-7aa5dda3-20241114";
     "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
       "function" ===
         typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&

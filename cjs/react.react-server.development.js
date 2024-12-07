@@ -500,6 +500,7 @@
       REACT_SCOPE_TYPE = Symbol.for("react.scope");
     TaintRegistryObjects$1 = Symbol.for("react.debug_trace_mode");
     var REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
+      REACT_LEGACY_HIDDEN_TYPE = Symbol.for("react.legacy_hidden"),
       REACT_POSTPONE_TYPE = Symbol.for("react.postpone"),
       MAYBE_ITERATOR_SYMBOL = Symbol.iterator,
       REACT_CLIENT_REFERENCE$1 = Symbol.for("react.client.reference"),
@@ -886,6 +887,7 @@
         type === REACT_STRICT_MODE_TYPE ||
         type === REACT_SUSPENSE_TYPE ||
         type === REACT_SUSPENSE_LIST_TYPE ||
+        type === REACT_LEGACY_HIDDEN_TYPE ||
         type === REACT_OFFSCREEN_TYPE ||
         type === REACT_SCOPE_TYPE ||
         ("object" === typeof type &&
@@ -986,5 +988,5 @@
     exports.useMemo = function (create, deps) {
       return resolveDispatcher().useMemo(create, deps);
     };
-    exports.version = "19.0.0-rc-7aa5dda3-20241114";
+    exports.version = "19.0.0-experimental-7aa5dda3-20241114";
   })();
