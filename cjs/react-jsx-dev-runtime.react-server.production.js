@@ -1,6 +1,6 @@
 /**
  * @license React
- * react-jsx-runtime.production.js
+ * react-jsx-dev-runtime.react-server.production.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -9,8 +9,13 @@
  */
 
 "use strict";
-var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
+var React = require("react"),
+  REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
   REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
+if (!React.__SERVER_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE)
+  throw Error(
+    'The "react" package in this environment is not configured correctly. The "react-server" condition must be enabled in any environment that runs React Server Components.'
+  );
 function jsxProd(type, config, maybeKey) {
   var key = null;
   void 0 !== maybeKey && (key = "" + maybeKey);
@@ -31,4 +36,5 @@ function jsxProd(type, config, maybeKey) {
 }
 exports.Fragment = REACT_FRAGMENT_TYPE;
 exports.jsx = jsxProd;
+exports.jsxDEV = void 0;
 exports.jsxs = jsxProd;

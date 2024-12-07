@@ -1,6 +1,6 @@
 /**
  * @license React
- * react.development.js
+ * react.react-server.development.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -11,17 +11,6 @@
 "use strict";
 "production" !== process.env.NODE_ENV &&
   (function () {
-    function defineDeprecationWarning(methodName, info) {
-      Object.defineProperty(Component.prototype, methodName, {
-        get: function () {
-          console.warn(
-            "%s(...) is deprecated in plain JavaScript React classes. %s",
-            info[0],
-            info[1]
-          );
-        }
-      });
-    }
     function getIteratorFn(maybeIterable) {
       if (null === maybeIterable || "object" !== typeof maybeIterable)
         return null;
@@ -29,33 +18,6 @@
         (MAYBE_ITERATOR_SYMBOL && maybeIterable[MAYBE_ITERATOR_SYMBOL]) ||
         maybeIterable["@@iterator"];
       return "function" === typeof maybeIterable ? maybeIterable : null;
-    }
-    function warnNoop(publicInstance, callerName) {
-      publicInstance =
-        ((publicInstance = publicInstance.constructor) &&
-          (publicInstance.displayName || publicInstance.name)) ||
-        "ReactClass";
-      var warningKey = publicInstance + "." + callerName;
-      didWarnStateUpdateForUnmountedComponent[warningKey] ||
-        (console.error(
-          "Can't call %s on a component that is not yet mounted. This is a no-op, but it might indicate a bug in your application. Instead, assign to `this.state` directly or define a `state = {};` class property with the desired state in the %s component.",
-          callerName,
-          publicInstance
-        ),
-        (didWarnStateUpdateForUnmountedComponent[warningKey] = !0));
-    }
-    function Component(props, context, updater) {
-      this.props = props;
-      this.context = context;
-      this.refs = emptyObject;
-      this.updater = updater || ReactNoopUpdateQueue;
-    }
-    function ComponentDummy() {}
-    function PureComponent(props, context, updater) {
-      this.props = props;
-      this.context = context;
-      this.refs = emptyObject;
-      this.updater = updater || ReactNoopUpdateQueue;
     }
     function testStringCoercion(value) {
       return "" + value;
@@ -450,6 +412,14 @@
       });
       return result;
     }
+    function resolveDispatcher() {
+      var dispatcher = ReactSharedInternals.H;
+      null === dispatcher &&
+        console.error(
+          "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem."
+        );
+      return dispatcher;
+    }
     function lazyInitializer(payload) {
       if (-1 === payload._status) {
         var ctor = payload._result;
@@ -484,106 +454,37 @@
         );
       throw payload._result;
     }
-    function resolveDispatcher() {
-      var dispatcher = ReactSharedInternals.H;
-      null === dispatcher &&
-        console.error(
-          "Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:\n1. You might have mismatching versions of React and the renderer (such as React DOM)\n2. You might be breaking the Rules of Hooks\n3. You might have more than one copy of React in the same app\nSee https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem."
-        );
-      return dispatcher;
+    function createCacheRoot() {
+      return new WeakMap();
     }
-    function useOptimistic(passthrough, reducer) {
-      return resolveDispatcher().useOptimistic(passthrough, reducer);
+    function createCacheNode() {
+      return { s: 0, v: void 0, o: null, p: null };
     }
     function noop() {}
-    function enqueueTask(task) {
-      if (null === enqueueTaskImpl)
-        try {
-          var requireString = ("require" + Math.random()).slice(0, 7);
-          enqueueTaskImpl = (module && module[requireString]).call(
-            module,
-            "timers"
-          ).setImmediate;
-        } catch (_err) {
-          enqueueTaskImpl = function (callback) {
-            !1 === didWarnAboutMessageChannel &&
-              ((didWarnAboutMessageChannel = !0),
-              "undefined" === typeof MessageChannel &&
-                console.error(
-                  "This browser does not have a MessageChannel implementation, so enqueuing tasks via await act(async () => ...) will fail. Please file an issue at https://github.com/facebook/react/issues if you encounter this warning."
-                ));
-            var channel = new MessageChannel();
-            channel.port1.onmessage = callback;
-            channel.port2.postMessage(void 0);
-          };
-        }
-      return enqueueTaskImpl(task);
+    function cleanup(entryValue) {
+      var entry = TaintRegistryValues.get(entryValue);
+      void 0 !== entry &&
+        (TaintRegistryPendingRequests.forEach(function (requestQueue) {
+          requestQueue.push(entryValue);
+          entry.count++;
+        }),
+        1 === entry.count
+          ? TaintRegistryValues.delete(entryValue)
+          : entry.count--);
     }
-    function aggregateErrors(errors) {
-      return 1 < errors.length && "function" === typeof AggregateError
-        ? new AggregateError(errors)
-        : errors[0];
-    }
-    function popActScope(prevActQueue, prevActScopeDepth) {
-      prevActScopeDepth !== actScopeDepth - 1 &&
-        console.error(
-          "You seem to have overlapping act() calls, this is not supported. Be sure to await previous act() calls before making a new one. "
-        );
-      actScopeDepth = prevActScopeDepth;
-    }
-    function recursivelyFlushAsyncActWork(returnValue, resolve, reject) {
-      var queue = ReactSharedInternals.actQueue;
-      if (null !== queue)
-        if (0 !== queue.length)
-          try {
-            flushActQueue(queue);
-            enqueueTask(function () {
-              return recursivelyFlushAsyncActWork(returnValue, resolve, reject);
-            });
-            return;
-          } catch (error) {
-            ReactSharedInternals.thrownErrors.push(error);
-          }
-        else ReactSharedInternals.actQueue = null;
-      0 < ReactSharedInternals.thrownErrors.length
-        ? ((queue = aggregateErrors(ReactSharedInternals.thrownErrors)),
-          (ReactSharedInternals.thrownErrors.length = 0),
-          reject(queue))
-        : resolve(returnValue);
-    }
-    function flushActQueue(queue) {
-      if (!isFlushing) {
-        isFlushing = !0;
-        var i = 0;
-        try {
-          for (; i < queue.length; i++) {
-            var callback = queue[i];
-            do {
-              ReactSharedInternals.didUsePromise = !1;
-              var continuation = callback(!1);
-              if (null !== continuation) {
-                if (ReactSharedInternals.didUsePromise) {
-                  queue[i] = callback;
-                  queue.splice(0, i);
-                  return;
-                }
-                callback = continuation;
-              } else break;
-            } while (1);
-          }
-          queue.length = 0;
-        } catch (error) {
-          queue.splice(0, i + 1), ReactSharedInternals.thrownErrors.push(error);
-        } finally {
-          isFlushing = !1;
-        }
-      }
-    }
-    "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
-      "function" ===
-        typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart &&
-      __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
+    var TaintRegistryObjects$1 = new WeakMap(),
+      TaintRegistryValues$1 = new Map(),
+      TaintRegistryByteLengths$1 = new Set(),
+      TaintRegistryPendingRequests$1 = new Set(),
+      ReactSharedInternals = { H: null, A: null };
+    ReactSharedInternals.TaintRegistryObjects = TaintRegistryObjects$1;
+    ReactSharedInternals.TaintRegistryValues = TaintRegistryValues$1;
+    ReactSharedInternals.TaintRegistryByteLengths = TaintRegistryByteLengths$1;
+    ReactSharedInternals.TaintRegistryPendingRequests =
+      TaintRegistryPendingRequests$1;
+    ReactSharedInternals.getCurrentStack = null;
+    var isArrayImpl = Array.isArray,
+      REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
       REACT_PORTAL_TYPE = Symbol.for("react.portal"),
       REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"),
       REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"),
@@ -596,78 +497,14 @@
       REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"),
       REACT_MEMO_TYPE = Symbol.for("react.memo"),
       REACT_LAZY_TYPE = Symbol.for("react.lazy"),
-      REACT_SCOPE_TYPE = Symbol.for("react.scope"),
-      REACT_DEBUG_TRACING_MODE_TYPE = Symbol.for("react.debug_trace_mode"),
-      REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
+      REACT_SCOPE_TYPE = Symbol.for("react.scope");
+    TaintRegistryObjects$1 = Symbol.for("react.debug_trace_mode");
+    var REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
       REACT_POSTPONE_TYPE = Symbol.for("react.postpone"),
       MAYBE_ITERATOR_SYMBOL = Symbol.iterator,
-      didWarnStateUpdateForUnmountedComponent = {},
-      ReactNoopUpdateQueue = {
-        isMounted: function () {
-          return !1;
-        },
-        enqueueForceUpdate: function (publicInstance) {
-          warnNoop(publicInstance, "forceUpdate");
-        },
-        enqueueReplaceState: function (publicInstance) {
-          warnNoop(publicInstance, "replaceState");
-        },
-        enqueueSetState: function (publicInstance) {
-          warnNoop(publicInstance, "setState");
-        }
-      },
-      assign = Object.assign,
-      emptyObject = {};
-    Object.freeze(emptyObject);
-    Component.prototype.isReactComponent = {};
-    Component.prototype.setState = function (partialState, callback) {
-      if (
-        "object" !== typeof partialState &&
-        "function" !== typeof partialState &&
-        null != partialState
-      )
-        throw Error(
-          "takes an object of state variables to update or a function which returns an object of state variables."
-        );
-      this.updater.enqueueSetState(this, partialState, callback, "setState");
-    };
-    Component.prototype.forceUpdate = function (callback) {
-      this.updater.enqueueForceUpdate(this, callback, "forceUpdate");
-    };
-    var deprecatedAPIs = {
-        isMounted: [
-          "isMounted",
-          "Instead, make sure to clean up subscriptions and pending requests in componentWillUnmount to prevent memory leaks."
-        ],
-        replaceState: [
-          "replaceState",
-          "Refactor your code to use setState instead (see https://github.com/facebook/react/issues/3236)."
-        ]
-      },
-      fnName;
-    for (fnName in deprecatedAPIs)
-      deprecatedAPIs.hasOwnProperty(fnName) &&
-        defineDeprecationWarning(fnName, deprecatedAPIs[fnName]);
-    ComponentDummy.prototype = Component.prototype;
-    deprecatedAPIs = PureComponent.prototype = new ComponentDummy();
-    deprecatedAPIs.constructor = PureComponent;
-    assign(deprecatedAPIs, Component.prototype);
-    deprecatedAPIs.isPureReactComponent = !0;
-    var isArrayImpl = Array.isArray,
       REACT_CLIENT_REFERENCE$1 = Symbol.for("react.client.reference"),
-      ReactSharedInternals = {
-        H: null,
-        A: null,
-        T: null,
-        S: null,
-        actQueue: null,
-        isBatchingLegacy: !1,
-        didScheduleLegacyUpdate: !1,
-        didUsePromise: !1,
-        thrownErrors: [],
-        getCurrentStack: null
-      },
       hasOwnProperty = Object.prototype.hasOwnProperty,
+      assign = Object.assign,
       REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference");
     new ("function" === typeof WeakMap ? WeakMap : Map)();
     var createTask = console.createTask
@@ -708,20 +545,20 @@
                 return;
               }
               console.error(error);
-            },
-      didWarnAboutMessageChannel = !1,
-      enqueueTaskImpl = null,
-      actScopeDepth = 0,
-      didWarnNoAwaitAct = !1,
-      isFlushing = !1,
-      queueSeveralMicrotasks =
-        "function" === typeof queueMicrotask
-          ? function (callback) {
-              queueMicrotask(function () {
-                return queueMicrotask(callback);
-              });
-            }
-          : enqueueTask;
+            };
+    TaintRegistryValues$1 = Object.getPrototypeOf;
+    var TaintRegistryObjects = ReactSharedInternals.TaintRegistryObjects,
+      TaintRegistryValues = ReactSharedInternals.TaintRegistryValues,
+      TaintRegistryByteLengths = ReactSharedInternals.TaintRegistryByteLengths,
+      TaintRegistryPendingRequests =
+        ReactSharedInternals.TaintRegistryPendingRequests,
+      TypedArrayConstructor = TaintRegistryValues$1(
+        Uint32Array.prototype
+      ).constructor,
+      finalizationRegistry =
+        "function" === typeof FinalizationRegistry
+          ? new FinalizationRegistry(cleanup)
+          : null;
     exports.Children = {
       map: mapChildren,
       forEach: function (children, forEachFunc, forEachContext) {
@@ -755,133 +592,54 @@
         return children;
       }
     };
-    exports.Component = Component;
     exports.Fragment = REACT_FRAGMENT_TYPE;
     exports.Profiler = REACT_PROFILER_TYPE;
-    exports.PureComponent = PureComponent;
     exports.StrictMode = REACT_STRICT_MODE_TYPE;
     exports.Suspense = REACT_SUSPENSE_TYPE;
-    exports.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
+    exports.__SERVER_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
       ReactSharedInternals;
-    exports.__COMPILER_RUNTIME = {
-      c: function (size) {
-        return resolveDispatcher().useMemoCache(size);
-      }
-    };
-    exports.act = function (callback) {
-      var prevActQueue = ReactSharedInternals.actQueue,
-        prevActScopeDepth = actScopeDepth;
-      actScopeDepth++;
-      var queue = (ReactSharedInternals.actQueue =
-          null !== prevActQueue ? prevActQueue : []),
-        didAwaitActCall = !1;
-      try {
-        var result = callback();
-      } catch (error) {
-        ReactSharedInternals.thrownErrors.push(error);
-      }
-      if (0 < ReactSharedInternals.thrownErrors.length)
-        throw (
-          (popActScope(prevActQueue, prevActScopeDepth),
-          (callback = aggregateErrors(ReactSharedInternals.thrownErrors)),
-          (ReactSharedInternals.thrownErrors.length = 0),
-          callback)
-        );
-      if (
-        null !== result &&
-        "object" === typeof result &&
-        "function" === typeof result.then
-      ) {
-        var thenable = result;
-        queueSeveralMicrotasks(function () {
-          didAwaitActCall ||
-            didWarnNoAwaitAct ||
-            ((didWarnNoAwaitAct = !0),
-            console.error(
-              "You called act(async () => ...) without await. This could lead to unexpected testing behaviour, interleaving multiple act calls and mixing their scopes. You should - await act(async () => ...);"
-            ));
-        });
-        return {
-          then: function (resolve, reject) {
-            didAwaitActCall = !0;
-            thenable.then(
-              function (returnValue) {
-                popActScope(prevActQueue, prevActScopeDepth);
-                if (0 === prevActScopeDepth) {
-                  try {
-                    flushActQueue(queue),
-                      enqueueTask(function () {
-                        return recursivelyFlushAsyncActWork(
-                          returnValue,
-                          resolve,
-                          reject
-                        );
-                      });
-                  } catch (error$0) {
-                    ReactSharedInternals.thrownErrors.push(error$0);
-                  }
-                  if (0 < ReactSharedInternals.thrownErrors.length) {
-                    var _thrownError = aggregateErrors(
-                      ReactSharedInternals.thrownErrors
-                    );
-                    ReactSharedInternals.thrownErrors.length = 0;
-                    reject(_thrownError);
-                  }
-                } else resolve(returnValue);
-              },
-              function (error) {
-                popActScope(prevActQueue, prevActScopeDepth);
-                0 < ReactSharedInternals.thrownErrors.length
-                  ? ((error = aggregateErrors(
-                      ReactSharedInternals.thrownErrors
-                    )),
-                    (ReactSharedInternals.thrownErrors.length = 0),
-                    reject(error))
-                  : reject(error);
-              }
-            );
-          }
-        };
-      }
-      var returnValue$jscomp$0 = result;
-      popActScope(prevActQueue, prevActScopeDepth);
-      0 === prevActScopeDepth &&
-        (flushActQueue(queue),
-        0 !== queue.length &&
-          queueSeveralMicrotasks(function () {
-            didAwaitActCall ||
-              didWarnNoAwaitAct ||
-              ((didWarnNoAwaitAct = !0),
-              console.error(
-                "A component suspended inside an `act` scope, but the `act` call was not awaited. When testing React components that depend on asynchronous data, you must await the result:\n\nawait act(() => ...)"
-              ));
-          }),
-        (ReactSharedInternals.actQueue = null));
-      if (0 < ReactSharedInternals.thrownErrors.length)
-        throw (
-          ((callback = aggregateErrors(ReactSharedInternals.thrownErrors)),
-          (ReactSharedInternals.thrownErrors.length = 0),
-          callback)
-        );
-      return {
-        then: function (resolve, reject) {
-          didAwaitActCall = !0;
-          0 === prevActScopeDepth
-            ? ((ReactSharedInternals.actQueue = queue),
-              enqueueTask(function () {
-                return recursivelyFlushAsyncActWork(
-                  returnValue$jscomp$0,
-                  resolve,
-                  reject
-                );
-              }))
-            : resolve(returnValue$jscomp$0);
-        }
-      };
-    };
     exports.cache = function (fn) {
       return function () {
-        return fn.apply(null, arguments);
+        var dispatcher = ReactSharedInternals.A;
+        if (!dispatcher) return fn.apply(null, arguments);
+        var fnMap = dispatcher.getCacheForType(createCacheRoot);
+        dispatcher = fnMap.get(fn);
+        void 0 === dispatcher &&
+          ((dispatcher = createCacheNode()), fnMap.set(fn, dispatcher));
+        fnMap = 0;
+        for (var l = arguments.length; fnMap < l; fnMap++) {
+          var arg = arguments[fnMap];
+          if (
+            "function" === typeof arg ||
+            ("object" === typeof arg && null !== arg)
+          ) {
+            var objectCache = dispatcher.o;
+            null === objectCache &&
+              (dispatcher.o = objectCache = new WeakMap());
+            dispatcher = objectCache.get(arg);
+            void 0 === dispatcher &&
+              ((dispatcher = createCacheNode()),
+              objectCache.set(arg, dispatcher));
+          } else
+            (objectCache = dispatcher.p),
+              null === objectCache && (dispatcher.p = objectCache = new Map()),
+              (dispatcher = objectCache.get(arg)),
+              void 0 === dispatcher &&
+                ((dispatcher = createCacheNode()),
+                objectCache.set(arg, dispatcher));
+        }
+        if (1 === dispatcher.s) return dispatcher.v;
+        if (2 === dispatcher.s) throw dispatcher.v;
+        try {
+          var result = fn.apply(null, arguments);
+          fnMap = dispatcher;
+          fnMap.s = 1;
+          return (fnMap.v = result);
+        } catch (error) {
+          throw (
+            ((result = dispatcher), (result.s = 2), (result.v = error), error)
+          );
+        }
       };
     };
     exports.captureOwnerStack = function () {
@@ -948,24 +706,6 @@
           isValidElement(owner) && owner._store && (owner._store.validated = 1);
       return props;
     };
-    exports.createContext = function (defaultValue) {
-      defaultValue = {
-        $$typeof: REACT_CONTEXT_TYPE,
-        _currentValue: defaultValue,
-        _currentValue2: defaultValue,
-        _threadCount: 0,
-        Provider: null,
-        Consumer: null
-      };
-      defaultValue.Provider = defaultValue;
-      defaultValue.Consumer = {
-        $$typeof: REACT_CONSUMER_TYPE,
-        _context: defaultValue
-      };
-      defaultValue._currentRenderer = null;
-      defaultValue._currentRenderer2 = null;
-      return defaultValue;
-    };
     exports.createElement = function (type, config, children) {
       for (var i = 2; i < arguments.length; i++) {
         var node = arguments[i];
@@ -1028,14 +768,66 @@
       Object.seal(refObject);
       return refObject;
     };
-    exports.experimental_useEffectEvent = function (callback) {
-      return resolveDispatcher().useEffectEvent(callback);
-    };
-    exports.experimental_useOptimistic = function (passthrough, reducer) {
-      console.error(
-        "useOptimistic is now in canary. Remove the experimental_ prefix. The prefixed alias will be removed in an upcoming release."
+    exports.experimental_taintObjectReference = function (message, object) {
+      if ("string" === typeof object || "bigint" === typeof object)
+        throw Error(
+          "Only objects or functions can be passed to taintObjectReference. Try taintUniqueValue instead."
+        );
+      if (
+        null === object ||
+        ("object" !== typeof object && "function" !== typeof object)
+      )
+        throw Error(
+          "Only objects or functions can be passed to taintObjectReference."
+        );
+      TaintRegistryObjects.set(
+        object,
+        "" +
+          (message ||
+            "A tainted value was attempted to be serialized to a Client Component or Action closure. This would leak it to the client.")
       );
-      return useOptimistic(passthrough, reducer);
+    };
+    exports.experimental_taintUniqueValue = function (
+      message,
+      lifetime,
+      value
+    ) {
+      message =
+        "" +
+        (message ||
+          "A tainted value was attempted to be serialized to a Client Component or Action closure. This would leak it to the client.");
+      if (
+        null === lifetime ||
+        ("object" !== typeof lifetime && "function" !== typeof lifetime)
+      )
+        throw Error(
+          "To taint a value, a lifetime must be defined by passing an object that holds the value."
+        );
+      if ("string" !== typeof value && "bigint" !== typeof value)
+        if (value instanceof TypedArrayConstructor || value instanceof DataView)
+          TaintRegistryByteLengths.add(value.byteLength),
+            (value = String.fromCharCode.apply(
+              String,
+              new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
+            ));
+        else {
+          message = null === value ? "null" : typeof value;
+          if ("object" === message || "function" === message)
+            throw Error(
+              "taintUniqueValue cannot taint objects or functions. Try taintObjectReference instead."
+            );
+          throw Error(
+            "Cannot taint a " +
+              message +
+              " because the value is too general and not unique enough to block globally."
+          );
+        }
+      var existingEntry = TaintRegistryValues.get(value);
+      void 0 === existingEntry
+        ? TaintRegistryValues.set(value, { message: message, count: 1 })
+        : existingEntry.count++;
+      null !== finalizationRegistry &&
+        finalizationRegistry.register(lifetime, value);
     };
     exports.forwardRef = function (render) {
       null != render && render.$$typeof === REACT_MEMO_TYPE
@@ -1159,9 +951,8 @@
           (ReactSharedInternals.T = prevTransition);
       }
     };
-    exports.unstable_Activity = REACT_OFFSCREEN_TYPE;
-    exports.unstable_DebugTracingMode = REACT_DEBUG_TRACING_MODE_TYPE;
-    exports.unstable_SuspenseList = REACT_SUSPENSE_LIST_TYPE;
+    exports.unstable_DebugTracingMode = TaintRegistryObjects$1;
+    exports.unstable_SuspenseList = REACT_SUSPENSE_TYPE;
     exports.unstable_getCacheForType = function (resourceType) {
       var dispatcher = ReactSharedInternals.A;
       return dispatcher
@@ -1172,9 +963,6 @@
       reason = Error(reason);
       reason.$$typeof = REACT_POSTPONE_TYPE;
       throw reason;
-    };
-    exports.unstable_useCacheRefresh = function () {
-      return resolveDispatcher().useCacheRefresh();
     };
     exports.use = function (usable) {
       return resolveDispatcher().use(usable);
@@ -1189,65 +977,14 @@
     exports.useCallback = function (callback, deps) {
       return resolveDispatcher().useCallback(callback, deps);
     };
-    exports.useContext = function (Context) {
-      var dispatcher = resolveDispatcher();
-      Context.$$typeof === REACT_CONSUMER_TYPE &&
-        console.error(
-          "Calling useContext(Context.Consumer) is not supported and will cause bugs. Did you mean to call useContext(Context) instead?"
-        );
-      return dispatcher.useContext(Context);
-    };
     exports.useDebugValue = function (value, formatterFn) {
       return resolveDispatcher().useDebugValue(value, formatterFn);
-    };
-    exports.useDeferredValue = function (value, initialValue) {
-      return resolveDispatcher().useDeferredValue(value, initialValue);
-    };
-    exports.useEffect = function (create, deps) {
-      return resolveDispatcher().useEffect(create, deps);
     };
     exports.useId = function () {
       return resolveDispatcher().useId();
     };
-    exports.useImperativeHandle = function (ref, create, deps) {
-      return resolveDispatcher().useImperativeHandle(ref, create, deps);
-    };
-    exports.useInsertionEffect = function (create, deps) {
-      return resolveDispatcher().useInsertionEffect(create, deps);
-    };
-    exports.useLayoutEffect = function (create, deps) {
-      return resolveDispatcher().useLayoutEffect(create, deps);
-    };
     exports.useMemo = function (create, deps) {
       return resolveDispatcher().useMemo(create, deps);
     };
-    exports.useOptimistic = useOptimistic;
-    exports.useReducer = function (reducer, initialArg, init) {
-      return resolveDispatcher().useReducer(reducer, initialArg, init);
-    };
-    exports.useRef = function (initialValue) {
-      return resolveDispatcher().useRef(initialValue);
-    };
-    exports.useState = function (initialState) {
-      return resolveDispatcher().useState(initialState);
-    };
-    exports.useSyncExternalStore = function (
-      subscribe,
-      getSnapshot,
-      getServerSnapshot
-    ) {
-      return resolveDispatcher().useSyncExternalStore(
-        subscribe,
-        getSnapshot,
-        getServerSnapshot
-      );
-    };
-    exports.useTransition = function () {
-      return resolveDispatcher().useTransition();
-    };
     exports.version = "19.0.0-rc-7aa5dda3-20241114";
-    "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
-      "function" ===
-        typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&
-      __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
   })();

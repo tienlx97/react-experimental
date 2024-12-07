@@ -1,6 +1,6 @@
 /**
  * @license React
- * react.production.js
+ * react.react-server.production.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -9,20 +9,44 @@
  */
 
 "use strict";
-var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
+var TaintRegistryObjects$1 = new WeakMap(),
+  TaintRegistryValues$1 = new Map(),
+  TaintRegistryByteLengths$1 = new Set(),
+  TaintRegistryPendingRequests$1 = new Set(),
+  ReactSharedInternals = {
+    H: null,
+    A: null,
+    TaintRegistryObjects: TaintRegistryObjects$1,
+    TaintRegistryValues: TaintRegistryValues$1,
+    TaintRegistryByteLengths: TaintRegistryByteLengths$1,
+    TaintRegistryPendingRequests: TaintRegistryPendingRequests$1
+  };
+function formatProdErrorMessage(code) {
+  var url = "https://react.dev/errors/" + code;
+  if (1 < arguments.length) {
+    url += "?args[]=" + encodeURIComponent(arguments[1]);
+    for (var i = 2; i < arguments.length; i++)
+      url += "&args[]=" + encodeURIComponent(arguments[i]);
+  }
+  return (
+    "Minified React error #" +
+    code +
+    "; visit " +
+    url +
+    " for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+  );
+}
+var isArrayImpl = Array.isArray,
+  REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
   REACT_PORTAL_TYPE = Symbol.for("react.portal"),
   REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"),
   REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"),
   REACT_PROFILER_TYPE = Symbol.for("react.profiler"),
-  REACT_CONSUMER_TYPE = Symbol.for("react.consumer"),
-  REACT_CONTEXT_TYPE = Symbol.for("react.context"),
   REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"),
   REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"),
-  REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"),
   REACT_MEMO_TYPE = Symbol.for("react.memo"),
   REACT_LAZY_TYPE = Symbol.for("react.lazy"),
   REACT_DEBUG_TRACING_MODE_TYPE = Symbol.for("react.debug_trace_mode"),
-  REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
   REACT_POSTPONE_TYPE = Symbol.for("react.postpone"),
   MAYBE_ITERATOR_SYMBOL = Symbol.iterator;
 function getIteratorFn(maybeIterable) {
@@ -32,52 +56,8 @@ function getIteratorFn(maybeIterable) {
     maybeIterable["@@iterator"];
   return "function" === typeof maybeIterable ? maybeIterable : null;
 }
-var ReactNoopUpdateQueue = {
-    isMounted: function () {
-      return !1;
-    },
-    enqueueForceUpdate: function () {},
-    enqueueReplaceState: function () {},
-    enqueueSetState: function () {}
-  },
-  assign = Object.assign,
-  emptyObject = {};
-function Component(props, context, updater) {
-  this.props = props;
-  this.context = context;
-  this.refs = emptyObject;
-  this.updater = updater || ReactNoopUpdateQueue;
-}
-Component.prototype.isReactComponent = {};
-Component.prototype.setState = function (partialState, callback) {
-  if (
-    "object" !== typeof partialState &&
-    "function" !== typeof partialState &&
-    null != partialState
-  )
-    throw Error(
-      "takes an object of state variables to update or a function which returns an object of state variables."
-    );
-  this.updater.enqueueSetState(this, partialState, callback, "setState");
-};
-Component.prototype.forceUpdate = function (callback) {
-  this.updater.enqueueForceUpdate(this, callback, "forceUpdate");
-};
-function ComponentDummy() {}
-ComponentDummy.prototype = Component.prototype;
-function PureComponent(props, context, updater) {
-  this.props = props;
-  this.context = context;
-  this.refs = emptyObject;
-  this.updater = updater || ReactNoopUpdateQueue;
-}
-var pureComponentPrototype = (PureComponent.prototype = new ComponentDummy());
-pureComponentPrototype.constructor = PureComponent;
-assign(pureComponentPrototype, Component.prototype);
-pureComponentPrototype.isPureReactComponent = !0;
-var isArrayImpl = Array.isArray,
-  ReactSharedInternals = { H: null, A: null, T: null, S: null },
-  hasOwnProperty = Object.prototype.hasOwnProperty;
+var hasOwnProperty = Object.prototype.hasOwnProperty,
+  assign = Object.assign;
 function ReactElement(type, key, self, source, owner, props) {
   self = props.ref;
   return {
@@ -253,11 +233,12 @@ function mapIntoArray(children, array, escapedPrefix, nameSoFar, callback) {
       );
     array = String(children);
     throw Error(
-      "Objects are not valid as a React child (found: " +
-        ("[object Object]" === array
+      formatProdErrorMessage(
+        31,
+        "[object Object]" === array
           ? "object with keys {" + Object.keys(children).join(", ") + "}"
-          : array) +
-        "). If you meant to render a collection of children, use an array instead."
+          : array
+      )
     );
   }
   return invokeCallback;
@@ -290,8 +271,11 @@ function lazyInitializer(payload) {
   if (1 === payload._status) return payload._result.default;
   throw payload._result;
 }
-function useOptimistic(passthrough, reducer) {
-  return ReactSharedInternals.H.useOptimistic(passthrough, reducer);
+function createCacheRoot() {
+  return new WeakMap();
+}
+function createCacheNode() {
+  return { s: 0, v: void 0, o: null, p: null };
 }
 var reportGlobalError =
   "function" === typeof reportError
@@ -323,6 +307,26 @@ var reportGlobalError =
         console.error(error);
       };
 function noop() {}
+var getPrototypeOf = Object.getPrototypeOf,
+  TaintRegistryObjects = ReactSharedInternals.TaintRegistryObjects,
+  TaintRegistryValues = ReactSharedInternals.TaintRegistryValues,
+  TaintRegistryByteLengths = ReactSharedInternals.TaintRegistryByteLengths,
+  TaintRegistryPendingRequests =
+    ReactSharedInternals.TaintRegistryPendingRequests,
+  TypedArrayConstructor = getPrototypeOf(Uint32Array.prototype).constructor;
+function cleanup(entryValue) {
+  var entry = TaintRegistryValues.get(entryValue);
+  void 0 !== entry &&
+    (TaintRegistryPendingRequests.forEach(function (requestQueue) {
+      requestQueue.push(entryValue);
+      entry.count++;
+    }),
+    1 === entry.count ? TaintRegistryValues.delete(entryValue) : entry.count--);
+}
+var finalizationRegistry =
+  "function" === typeof FinalizationRegistry
+    ? new FinalizationRegistry(cleanup)
+    : null;
 exports.Children = {
   map: mapChildren,
   forEach: function (children, forEachFunc, forEachContext) {
@@ -349,32 +353,54 @@ exports.Children = {
     );
   },
   only: function (children) {
-    if (!isValidElement(children))
-      throw Error(
-        "React.Children.only expected to receive a single React element child."
-      );
+    if (!isValidElement(children)) throw Error(formatProdErrorMessage(143));
     return children;
   }
 };
-exports.Component = Component;
 exports.Fragment = REACT_FRAGMENT_TYPE;
 exports.Profiler = REACT_PROFILER_TYPE;
-exports.PureComponent = PureComponent;
 exports.StrictMode = REACT_STRICT_MODE_TYPE;
 exports.Suspense = REACT_SUSPENSE_TYPE;
-exports.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
+exports.__SERVER_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
   ReactSharedInternals;
-exports.__COMPILER_RUNTIME = {
-  c: function (size) {
-    return ReactSharedInternals.H.useMemoCache(size);
-  }
-};
-exports.act = function () {
-  throw Error("act(...) is not supported in production builds of React.");
-};
 exports.cache = function (fn) {
   return function () {
-    return fn.apply(null, arguments);
+    var dispatcher = ReactSharedInternals.A;
+    if (!dispatcher) return fn.apply(null, arguments);
+    var fnMap = dispatcher.getCacheForType(createCacheRoot);
+    dispatcher = fnMap.get(fn);
+    void 0 === dispatcher &&
+      ((dispatcher = createCacheNode()), fnMap.set(fn, dispatcher));
+    fnMap = 0;
+    for (var l = arguments.length; fnMap < l; fnMap++) {
+      var arg = arguments[fnMap];
+      if (
+        "function" === typeof arg ||
+        ("object" === typeof arg && null !== arg)
+      ) {
+        var objectCache = dispatcher.o;
+        null === objectCache && (dispatcher.o = objectCache = new WeakMap());
+        dispatcher = objectCache.get(arg);
+        void 0 === dispatcher &&
+          ((dispatcher = createCacheNode()), objectCache.set(arg, dispatcher));
+      } else
+        (objectCache = dispatcher.p),
+          null === objectCache && (dispatcher.p = objectCache = new Map()),
+          (dispatcher = objectCache.get(arg)),
+          void 0 === dispatcher &&
+            ((dispatcher = createCacheNode()),
+            objectCache.set(arg, dispatcher));
+    }
+    if (1 === dispatcher.s) return dispatcher.v;
+    if (2 === dispatcher.s) throw dispatcher.v;
+    try {
+      var result = fn.apply(null, arguments);
+      fnMap = dispatcher;
+      fnMap.s = 1;
+      return (fnMap.v = result);
+    } catch (error) {
+      throw ((result = dispatcher), (result.s = 2), (result.v = error), error);
+    }
   };
 };
 exports.captureOwnerStack = function () {
@@ -382,9 +408,7 @@ exports.captureOwnerStack = function () {
 };
 exports.cloneElement = function (element, config, children) {
   if (null === element || void 0 === element)
-    throw Error(
-      "The argument must be a React element, but you passed " + element + "."
-    );
+    throw Error(formatProdErrorMessage(267, element));
   var props = assign({}, element.props),
     key = element.key,
     owner = void 0;
@@ -406,22 +430,6 @@ exports.cloneElement = function (element, config, children) {
     props.children = childArray;
   }
   return ReactElement(element.type, key, void 0, void 0, owner, props);
-};
-exports.createContext = function (defaultValue) {
-  defaultValue = {
-    $$typeof: REACT_CONTEXT_TYPE,
-    _currentValue: defaultValue,
-    _currentValue2: defaultValue,
-    _threadCount: 0,
-    Provider: null,
-    Consumer: null
-  };
-  defaultValue.Provider = defaultValue;
-  defaultValue.Consumer = {
-    $$typeof: REACT_CONSUMER_TYPE,
-    _context: defaultValue
-  };
-  return defaultValue;
 };
 exports.createElement = function (type, config, children) {
   var propName,
@@ -450,11 +458,49 @@ exports.createElement = function (type, config, children) {
 exports.createRef = function () {
   return { current: null };
 };
-exports.experimental_useEffectEvent = function (callback) {
-  return ReactSharedInternals.H.useEffectEvent(callback);
+exports.experimental_taintObjectReference = function (message, object) {
+  message =
+    "" +
+    (message ||
+      "A tainted value was attempted to be serialized to a Client Component or Action closure. This would leak it to the client.");
+  if ("string" === typeof object || "bigint" === typeof object)
+    throw Error(formatProdErrorMessage(496));
+  if (
+    null === object ||
+    ("object" !== typeof object && "function" !== typeof object)
+  )
+    throw Error(formatProdErrorMessage(497));
+  TaintRegistryObjects.set(object, message);
 };
-exports.experimental_useOptimistic = function (passthrough, reducer) {
-  return useOptimistic(passthrough, reducer);
+exports.experimental_taintUniqueValue = function (message, lifetime, value) {
+  message =
+    "" +
+    (message ||
+      "A tainted value was attempted to be serialized to a Client Component or Action closure. This would leak it to the client.");
+  if (
+    null === lifetime ||
+    ("object" !== typeof lifetime && "function" !== typeof lifetime)
+  )
+    throw Error(formatProdErrorMessage(493));
+  if ("string" !== typeof value && "bigint" !== typeof value)
+    if (value instanceof TypedArrayConstructor || value instanceof DataView)
+      TaintRegistryByteLengths.add(value.byteLength),
+        (value = String.fromCharCode.apply(
+          String,
+          new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
+        ));
+    else {
+      message = null === value ? "null" : typeof value;
+      if ("object" === message || "function" === message)
+        throw Error(formatProdErrorMessage(494));
+      throw Error(formatProdErrorMessage(495, message));
+    }
+  var existingEntry = TaintRegistryValues.get(value);
+  void 0 === existingEntry
+    ? TaintRegistryValues.set(value, { message: message, count: 1 })
+    : existingEntry.count++;
+  null !== finalizationRegistry &&
+    finalizationRegistry.register(lifetime, value);
 };
 exports.forwardRef = function (render) {
   return { $$typeof: REACT_FORWARD_REF_TYPE, render: render };
@@ -493,9 +539,8 @@ exports.startTransition = function (scope) {
     ReactSharedInternals.T = prevTransition;
   }
 };
-exports.unstable_Activity = REACT_OFFSCREEN_TYPE;
 exports.unstable_DebugTracingMode = REACT_DEBUG_TRACING_MODE_TYPE;
-exports.unstable_SuspenseList = REACT_SUSPENSE_LIST_TYPE;
+exports.unstable_SuspenseList = REACT_SUSPENSE_TYPE;
 exports.unstable_getCacheForType = function (resourceType) {
   var dispatcher = ReactSharedInternals.A;
   return dispatcher ? dispatcher.getCacheForType(resourceType) : resourceType();
@@ -504,9 +549,6 @@ exports.unstable_postpone = function (reason) {
   reason = Error(reason);
   reason.$$typeof = REACT_POSTPONE_TYPE;
   throw reason;
-};
-exports.unstable_useCacheRefresh = function () {
-  return ReactSharedInternals.H.useCacheRefresh();
 };
 exports.use = function (usable) {
   return ReactSharedInternals.H.use(usable);
@@ -517,53 +559,11 @@ exports.useActionState = function (action, initialState, permalink) {
 exports.useCallback = function (callback, deps) {
   return ReactSharedInternals.H.useCallback(callback, deps);
 };
-exports.useContext = function (Context) {
-  return ReactSharedInternals.H.useContext(Context);
-};
 exports.useDebugValue = function () {};
-exports.useDeferredValue = function (value, initialValue) {
-  return ReactSharedInternals.H.useDeferredValue(value, initialValue);
-};
-exports.useEffect = function (create, deps) {
-  return ReactSharedInternals.H.useEffect(create, deps);
-};
 exports.useId = function () {
   return ReactSharedInternals.H.useId();
 };
-exports.useImperativeHandle = function (ref, create, deps) {
-  return ReactSharedInternals.H.useImperativeHandle(ref, create, deps);
-};
-exports.useInsertionEffect = function (create, deps) {
-  return ReactSharedInternals.H.useInsertionEffect(create, deps);
-};
-exports.useLayoutEffect = function (create, deps) {
-  return ReactSharedInternals.H.useLayoutEffect(create, deps);
-};
 exports.useMemo = function (create, deps) {
   return ReactSharedInternals.H.useMemo(create, deps);
-};
-exports.useOptimistic = useOptimistic;
-exports.useReducer = function (reducer, initialArg, init) {
-  return ReactSharedInternals.H.useReducer(reducer, initialArg, init);
-};
-exports.useRef = function (initialValue) {
-  return ReactSharedInternals.H.useRef(initialValue);
-};
-exports.useState = function (initialState) {
-  return ReactSharedInternals.H.useState(initialState);
-};
-exports.useSyncExternalStore = function (
-  subscribe,
-  getSnapshot,
-  getServerSnapshot
-) {
-  return ReactSharedInternals.H.useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot
-  );
-};
-exports.useTransition = function () {
-  return ReactSharedInternals.H.useTransition();
 };
 exports.version = "19.0.0-rc-7aa5dda3-20241114";

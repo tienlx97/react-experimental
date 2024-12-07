@@ -1,6 +1,6 @@
 /**
  * @license React
- * react-jsx-runtime.development.js
+ * react-jsx-runtime.react-server.development.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -110,7 +110,7 @@
       }
     }
     function getOwner() {
-      var dispatcher = ReactSharedInternals.A;
+      var dispatcher = ReactSharedInternalsServer.A;
       return null === dispatcher ? null : dispatcher.getOwner();
     }
     function hasValidKey(config) {
@@ -294,9 +294,13 @@
       REACT_MEMO_TYPE = Symbol.for("react.memo"),
       REACT_LAZY_TYPE = Symbol.for("react.lazy"),
       REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"),
-      ReactSharedInternals =
-        React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
-      hasOwnProperty = Object.prototype.hasOwnProperty,
+      ReactSharedInternalsServer =
+        React.__SERVER_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    if (!ReactSharedInternalsServer)
+      throw Error(
+        'The "react" package in this environment is not configured correctly. The "react-server" condition must be enabled in any environment that runs React Server Components.'
+      );
+    var hasOwnProperty = Object.prototype.hasOwnProperty,
       isArrayImpl = Array.isArray;
     new ("function" === typeof WeakMap ? WeakMap : Map)();
     var createTask = console.createTask
@@ -314,6 +318,25 @@
         config,
         maybeKey,
         !1,
+        source,
+        self,
+        Error("react-stack-top-frame"),
+        createTask(getTaskName(type))
+      );
+    };
+    exports.jsxDEV = function (
+      type,
+      config,
+      maybeKey,
+      isStaticChildren,
+      source,
+      self
+    ) {
+      return jsxDEVImpl(
+        type,
+        config,
+        maybeKey,
+        isStaticChildren,
         source,
         self,
         Error("react-stack-top-frame"),
