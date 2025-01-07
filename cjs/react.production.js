@@ -22,11 +22,9 @@ var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
   REACT_MEMO_TYPE = Symbol.for("react.memo"),
   REACT_LAZY_TYPE = Symbol.for("react.lazy"),
   REACT_SCOPE_TYPE = Symbol.for("react.scope"),
-  REACT_DEBUG_TRACING_MODE_TYPE = Symbol.for("react.debug_trace_mode"),
   REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
   REACT_LEGACY_HIDDEN_TYPE = Symbol.for("react.legacy_hidden"),
   REACT_TRACING_MARKER_TYPE = Symbol.for("react.tracing_marker"),
-  REACT_POSTPONE_TYPE = Symbol.for("react.postpone"),
   MAYBE_ITERATOR_SYMBOL = Symbol.iterator;
 function getIteratorFn(maybeIterable) {
   if (null === maybeIterable || "object" !== typeof maybeIterable) return null;
@@ -307,9 +305,6 @@ function lazyInitializer(payload) {
 function useMemoCache(size) {
   return ReactSharedInternals.H.useMemoCache(size);
 }
-function useOptimistic(passthrough, reducer) {
-  return ReactSharedInternals.H.useOptimistic(passthrough, reducer);
-}
 var reportGlobalError =
   "function" === typeof reportError
     ? reportError
@@ -392,9 +387,7 @@ exports.cache = function (fn) {
     return fn.apply(null, arguments);
   };
 };
-exports.captureOwnerStack = function () {
-  return null;
-};
+exports.captureOwnerStack = void 0;
 exports.cloneElement = function (element, config, children) {
   if (null === element || void 0 === element)
     throw Error(
@@ -468,9 +461,7 @@ exports.createRef = function () {
 exports.experimental_useEffectEvent = function (callback) {
   return ReactSharedInternals.H.useEffectEvent(callback);
 };
-exports.experimental_useOptimistic = function (passthrough, reducer) {
-  return useOptimistic(passthrough, reducer);
-};
+exports.experimental_useResourceEffect = void 0;
 exports.forwardRef = function (render) {
   return { $$typeof: REACT_FORWARD_REF_TYPE, render: render };
 };
@@ -512,7 +503,6 @@ exports.startTransition = function (scope) {
   }
 };
 exports.unstable_Activity = REACT_OFFSCREEN_TYPE;
-exports.unstable_DebugTracingMode = REACT_DEBUG_TRACING_MODE_TYPE;
 exports.unstable_LegacyHidden = REACT_LEGACY_HIDDEN_TYPE;
 exports.unstable_Scope = REACT_SCOPE_TYPE;
 exports.unstable_SuspenseList = REACT_SUSPENSE_LIST_TYPE;
@@ -521,16 +511,8 @@ exports.unstable_getCacheForType = function (resourceType) {
   var dispatcher = ReactSharedInternals.A;
   return dispatcher ? dispatcher.getCacheForType(resourceType) : resourceType();
 };
-exports.unstable_postpone = function (reason) {
-  reason = Error(reason);
-  reason.$$typeof = REACT_POSTPONE_TYPE;
-  throw reason;
-};
 exports.unstable_useCacheRefresh = function () {
   return ReactSharedInternals.H.useCacheRefresh();
-};
-exports.unstable_useContextWithBailout = function (context, select) {
-  return ReactSharedInternals.H.unstable_useContextWithBailout(context, select);
 };
 exports.unstable_useMemoCache = useMemoCache;
 exports.use = function (usable) {
@@ -567,7 +549,9 @@ exports.useLayoutEffect = function (create, deps) {
 exports.useMemo = function (create, deps) {
   return ReactSharedInternals.H.useMemo(create, deps);
 };
-exports.useOptimistic = useOptimistic;
+exports.useOptimistic = function (passthrough, reducer) {
+  return ReactSharedInternals.H.useOptimistic(passthrough, reducer);
+};
 exports.useReducer = function (reducer, initialArg, init) {
   return ReactSharedInternals.H.useReducer(reducer, initialArg, init);
 };
@@ -591,4 +575,4 @@ exports.useSyncExternalStore = function (
 exports.useTransition = function () {
   return ReactSharedInternals.H.useTransition();
 };
-exports.version = "19.0.0-rc-7aa5dda3-20241114";
+exports.version = "19.1.0-canary-33141625-20250106";

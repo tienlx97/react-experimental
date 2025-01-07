@@ -573,9 +573,6 @@
     function useMemoCache(size) {
       return resolveDispatcher().useMemoCache(size);
     }
-    function useOptimistic(passthrough, reducer) {
-      return resolveDispatcher().useOptimistic(passthrough, reducer);
-    }
     function noop() {}
     function enqueueTask(task) {
       if (null === enqueueTaskImpl)
@@ -678,11 +675,9 @@
       REACT_MEMO_TYPE = Symbol.for("react.memo"),
       REACT_LAZY_TYPE = Symbol.for("react.lazy"),
       REACT_SCOPE_TYPE = Symbol.for("react.scope"),
-      REACT_DEBUG_TRACING_MODE_TYPE = Symbol.for("react.debug_trace_mode"),
       REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
       REACT_LEGACY_HIDDEN_TYPE = Symbol.for("react.legacy_hidden"),
       REACT_TRACING_MARKER_TYPE = Symbol.for("react.tracing_marker"),
-      REACT_POSTPONE_TYPE = Symbol.for("react.postpone"),
       MAYBE_ITERATOR_SYMBOL = Symbol.iterator,
       didWarnStateUpdateForUnmountedComponent = {},
       ReactNoopUpdateQueue = {
@@ -718,16 +713,15 @@
       this.updater.enqueueForceUpdate(this, callback, "forceUpdate");
     };
     var deprecatedAPIs = {
-        isMounted: [
-          "isMounted",
-          "Instead, make sure to clean up subscriptions and pending requests in componentWillUnmount to prevent memory leaks."
-        ],
-        replaceState: [
-          "replaceState",
-          "Refactor your code to use setState instead (see https://github.com/facebook/react/issues/3236)."
-        ]
-      },
-      fnName;
+      isMounted: [
+        "isMounted",
+        "Instead, make sure to clean up subscriptions and pending requests in componentWillUnmount to prevent memory leaks."
+      ],
+      replaceState: [
+        "replaceState",
+        "Refactor your code to use setState instead (see https://github.com/facebook/react/issues/3236)."
+      ]
+    };
     for (fnName in deprecatedAPIs)
       deprecatedAPIs.hasOwnProperty(fnName) &&
         defineDeprecationWarning(fnName, deprecatedAPIs[fnName]);
@@ -807,7 +801,7 @@
             }
           : enqueueTask;
     deprecatedAPIs = { c: useMemoCache };
-    exports.Children = {
+    var fnName = {
       map: mapChildren,
       forEach: function (children, forEachFunc, forEachContext) {
         mapChildren(
@@ -840,6 +834,12 @@
         return children;
       }
     };
+    exports.captureOwnerStack = void 0;
+    exports.captureOwnerStack = function () {
+      var getCurrentStack = ReactSharedInternals.getCurrentStack;
+      return null === getCurrentStack ? null : getCurrentStack();
+    };
+    exports.Children = fnName;
     exports.Component = Component;
     exports.Fragment = REACT_FRAGMENT_TYPE;
     exports.Profiler = REACT_PROFILER_TYPE;
@@ -965,10 +965,6 @@
       return function () {
         return fn.apply(null, arguments);
       };
-    };
-    exports.captureOwnerStack = function () {
-      var getCurrentStack = ReactSharedInternals.getCurrentStack;
-      return null === getCurrentStack ? null : getCurrentStack();
     };
     exports.cloneElement = function (element, config, children) {
       if (null === element || void 0 === element)
@@ -1110,12 +1106,7 @@
     exports.experimental_useEffectEvent = function (callback) {
       return resolveDispatcher().useEffectEvent(callback);
     };
-    exports.experimental_useOptimistic = function (passthrough, reducer) {
-      console.error(
-        "useOptimistic is now in canary. Remove the experimental_ prefix. The prefixed alias will be removed in an upcoming release."
-      );
-      return useOptimistic(passthrough, reducer);
-    };
+    exports.experimental_useResourceEffect = void 0;
     exports.forwardRef = function (render) {
       null != render && render.$$typeof === REACT_MEMO_TYPE
         ? console.error(
@@ -1283,7 +1274,6 @@
       }
     };
     exports.unstable_Activity = REACT_OFFSCREEN_TYPE;
-    exports.unstable_DebugTracingMode = REACT_DEBUG_TRACING_MODE_TYPE;
     exports.unstable_LegacyHidden = REACT_LEGACY_HIDDEN_TYPE;
     exports.unstable_Scope = REACT_SCOPE_TYPE;
     exports.unstable_SuspenseList = REACT_SUSPENSE_LIST_TYPE;
@@ -1294,21 +1284,8 @@
         ? dispatcher.getCacheForType(resourceType)
         : resourceType();
     };
-    exports.unstable_postpone = function (reason) {
-      reason = Error(reason);
-      reason.$$typeof = REACT_POSTPONE_TYPE;
-      throw reason;
-    };
     exports.unstable_useCacheRefresh = function () {
       return resolveDispatcher().useCacheRefresh();
-    };
-    exports.unstable_useContextWithBailout = function (context, select) {
-      var dispatcher = resolveDispatcher();
-      context.$$typeof === REACT_CONSUMER_TYPE &&
-        console.error(
-          "Calling useContext(Context.Consumer) is not supported and will cause bugs. Did you mean to call useContext(Context) instead?"
-        );
-      return dispatcher.unstable_useContextWithBailout(context, select);
     };
     exports.unstable_useMemoCache = useMemoCache;
     exports.use = function (usable) {
@@ -1356,7 +1333,9 @@
     exports.useMemo = function (create, deps) {
       return resolveDispatcher().useMemo(create, deps);
     };
-    exports.useOptimistic = useOptimistic;
+    exports.useOptimistic = function (passthrough, reducer) {
+      return resolveDispatcher().useOptimistic(passthrough, reducer);
+    };
     exports.useReducer = function (reducer, initialArg, init) {
       return resolveDispatcher().useReducer(reducer, initialArg, init);
     };
@@ -1380,7 +1359,7 @@
     exports.useTransition = function () {
       return resolveDispatcher().useTransition();
     };
-    exports.version = "19.0.0-rc-7aa5dda3-20241114";
+    exports.version = "19.1.0-canary-33141625-20250106";
     "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ &&
       "function" ===
         typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop &&

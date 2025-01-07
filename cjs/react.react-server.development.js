@@ -497,9 +497,8 @@
       REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"),
       REACT_MEMO_TYPE = Symbol.for("react.memo"),
       REACT_LAZY_TYPE = Symbol.for("react.lazy"),
-      REACT_SCOPE_TYPE = Symbol.for("react.scope");
-    TaintRegistryObjects$1 = Symbol.for("react.debug_trace_mode");
-    var REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
+      REACT_SCOPE_TYPE = Symbol.for("react.scope"),
+      REACT_OFFSCREEN_TYPE = Symbol.for("react.offscreen"),
       REACT_LEGACY_HIDDEN_TYPE = Symbol.for("react.legacy_hidden"),
       REACT_POSTPONE_TYPE = Symbol.for("react.postpone"),
       MAYBE_ITERATOR_SYMBOL = Symbol.iterator,
@@ -547,13 +546,13 @@
               }
               console.error(error);
             };
-    TaintRegistryValues$1 = Object.getPrototypeOf;
+    TaintRegistryObjects$1 = Object.getPrototypeOf;
     var TaintRegistryObjects = ReactSharedInternals.TaintRegistryObjects,
       TaintRegistryValues = ReactSharedInternals.TaintRegistryValues,
       TaintRegistryByteLengths = ReactSharedInternals.TaintRegistryByteLengths,
       TaintRegistryPendingRequests =
         ReactSharedInternals.TaintRegistryPendingRequests,
-      TypedArrayConstructor = TaintRegistryValues$1(
+      TypedArrayConstructor = TaintRegistryObjects$1(
         Uint32Array.prototype
       ).constructor,
       finalizationRegistry =
@@ -953,7 +952,6 @@
           (ReactSharedInternals.T = prevTransition);
       }
     };
-    exports.unstable_DebugTracingMode = TaintRegistryObjects$1;
     exports.unstable_SuspenseList = REACT_SUSPENSE_TYPE;
     exports.unstable_getCacheForType = function (resourceType) {
       var dispatcher = ReactSharedInternals.A;
@@ -988,5 +986,5 @@
     exports.useMemo = function (create, deps) {
       return resolveDispatcher().useMemo(create, deps);
     };
-    exports.version = "19.0.0-rc-7aa5dda3-20241114";
+    exports.version = "19.1.0-canary-33141625-20250106";
   })();
